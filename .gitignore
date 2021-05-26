@@ -1,0 +1,15 @@
+# FOLDERS
+node_modules/
+py-scripts/
+tests/
+resources/
+
+# FILES
+config.json
+index.js
+!models/index.js
+package-lock.json
+psql-setup.sql
+words_alpha.txt
+
+utils/segregate.js

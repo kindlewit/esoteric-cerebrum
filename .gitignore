@@ -5,11 +5,11 @@ tests/
 resources/
 
 # FILES
-config.json
+config.js
 index.js
-!models/index.js
+!src/models/index.js
 package-lock.json
 psql-setup.sql
 words_alpha.txt
 
-utils/segregate.js
+src/utils/segregate.js

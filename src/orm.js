@@ -1,7 +1,7 @@
 "use strict";
 
 const Sequelize = require('sequelize');
-const config = require('./config');
+const config = require('../config');
 
 const sequelize = new Sequelize(
   config.DB_NAME,
@@ -25,42 +25,6 @@ const db = {
   answer: require('./models').answer(sequelize, Sequelize)
 };
 
-/*
-sequelize.sync()
-  .then(() => {
-    db.user.hasMany(db.quiz, { foreignKey: "creator" }) // 1 user (creator) has N quiz
-    db.quiz.belongsTo(db.user, { foreignKey: "creator" }); // 1 quiz belongs to 1 user (creator)
-  })
-  .then(() => {
-    db.quiz.hasMany(db.question, { foreignKey: "three_words" });
-    db.question.belongsTo(db.quiz, { foreignKey: "three_words" });
-  })
-  .then(() => {
-    db.quiz.hasMany(db.response, { foreignKey: "three_words" });
-    db.response.belongsTo(db.quiz, { foreignKey: "three_words" });
-    db.user.hasMany(db.response, { foreignKey: "username" });
-    db.response.belongsTo(db.user, { foreignKey: "username" });
-    db.question.hasMany(db.response, { foreignKey: "question_number" });
-    db.response.belongsTo(db.question, { foreignKey: "question_number" });
-  })
-  .then(() => {
-    db.quiz.hasMany(db.option, { foreignKey: "three_words" });
-    db.question.hasMany(db.option, { foreignKey: "question_number" });
-    db.option.belongsTo(db.quiz, { foreignKey: "three_words" });
-    db.option.belongsTo(db.question, { foreignKey: "question_number" });
-  })
-  .then(() => {
-    db.quiz.hasMany(db.answer, { foreignKey: "three_words" });
-    db.question.hasMany(db.answer, { foreignKey: "question_number" });
-    db.option.hasOne(db.answer, { foreignKey: "character" });
-    db.answer.belongsTo(db.quiz, { foreignKey: "three_words" });
-    db.answer.belongsTo(db.question, { foreignKey: "question_number" });
-    db.answer.belongsTo(db.option, { foreignKey: "character" });
-  })
-  .then(() => {
-    return sequelize.sync();
-  });
-*/
 // User <=> Quiz
 db.user.hasMany(db.quiz, {
   foreignKey: "creator",

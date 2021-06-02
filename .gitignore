@@ -1,3 +1,6 @@
+# ENV
+.env
+
 # FOLDERS
 node_modules/
 py-scripts/

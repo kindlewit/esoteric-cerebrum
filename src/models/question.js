@@ -21,7 +21,8 @@ module.exports = (sequelize, Sequelize) => {
       file: Sequelize.STRING,
       weightage: {
         type: Sequelize.FLOAT,
-        allowNull: true
+        required: true,
+        allowNull: false
       },
       answer_format: {
         type: Sequelize.ENUM,
@@ -38,6 +39,8 @@ module.exports = (sequelize, Sequelize) => {
     {
       underscored: true,
       timestamps: true,
+      createdAt: 'created_at',
+      updatedAt: 'updated_at',
       freezeTableName: true
     }
   );

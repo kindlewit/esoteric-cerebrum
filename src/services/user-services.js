@@ -25,20 +25,24 @@ async function create(doc) {
     await db.user.create(doc);
     return doc;
   } catch (e) {
-    throw Error(e);
+    throw e;
   }
 }
 
 function list(limit = null, offset = null) {
   return new Promise((resolve, reject) => {
-    db.user.findAll({
+    let query = {
       offset: offset,
       limit: limit,
       order: [
         ['created_at', 'DESC']
       ],
+      attributes: {
+        exclude: ['password']
+      },
       raw: true
-    })
+    }
+    db.user.findAll(query)
       .then(docs => resolve(_.cloneDeep(docs)))
       .catch(e => reject(e));
   });
@@ -48,14 +52,46 @@ function count() {
   return db.user.count();
 }
 
-async function listLinked(username, list) {
-  if (_.isEmpty(list)) {
-    return false;
+function listNames() {
+  return new Promise((resolve, reject) => {
+    db.user.findAll({
+      raw: true,
+      attributes: {
+        include: ['username']
+      }
+    })
+      .then(docs => resolve(_.chain(docs).cloneDeep().map('username').value()))
+      .catch(e => reject(e));
+  })
+}
+
+function get(username, includePass = false) {
+  if (_.isNil(username)) {
+    throw Error("Missing parameters");
+  }
+  return new Promise((resolve, reject) => {
+    let query = { raw: true }
+    if (!includePass) {
+      query.attributes = { exclude: ['password'] };
+    }
+    db.user.findByPk(username, query)
+      .then(docs => resolve(_.cloneDeep(docs)))
+      .catch(e => reject(e));
+  });
+}
+
+async function getLinked(username, list) {
+  if (_.isEmpty(list) || _.isNil(username)) {
+    throw Error("Missing parameters");
   }
   try {
-    let result = await db.user.findByPk(username, { raw: true });
-    if (_.includes(list, "quiz")) {
-      let docs = await db.quiz.findAll({
+    let userDoc = await db.user.findByPk(username, { raw: true, attributes: { exclude: ['password'] } });
+    if (_.isEmpty(userDoc)) {
+      return {}
+    }
+    let result = { ...userDoc };
+    if (_.includes(list, "quizzes")) {
+      let query = {
         where: {
           creator: username
         },
@@ -66,11 +102,12 @@ async function listLinked(username, list) {
           exclude: ['creator', 'url', 'file_upload']
         },
         raw: true
-      });
-      result.quiz = _.cloneDeep(docs);
+      }
+      let docs = await db.quiz.findAll(query);
+      result.quizzes = !_.isEmpty(docs) ? _.cloneDeep(docs) : [];
     }
-    if (_.includes(list, "response")) {
-      let docs = await db.response.findAll({
+    if (_.includes(list, "responses")) {
+      let query = {
         where: {
           username: username
         },
@@ -81,29 +118,19 @@ async function listLinked(username, list) {
           exclude: ['username']
         },
         raw: true
-      });
-      result.response = _.cloneDeep(docs);
+      }
+      let docs = await db.response.findAll(query);
+      result.responses = !_.isEmpty(docs) ? _.cloneDeep(docs) : [];
     }
     return result;
   } catch (e) {
-    throw Error(e);
+    throw e;
   }
-}
-
-function get(username) {
-  if (_.isNil(username)) {
-    return false;
-  }
-  return new Promise((resolve, reject) => {
-    db.user.findByPk(username, { raw: true })
-      .then(docs => resolve(_.cloneDeep(docs)))
-      .catch(e => reject(e));
-  });
 }
 
 function update(username, changes) {
   if (_.isNil(username) || _.isNil(changes)) {
-    return false;
+    throw Error("Missing parameters");
   }
   return new Promise((resolve, reject) => {
     changes = sanitize(changes);
@@ -120,7 +147,7 @@ function update(username, changes) {
 
 function remove(username) {
   if (_.isNil(username)) {
-    return false;
+    throw Error("Missing parameters");
   }
   return new Promise((resolve, reject) => {
     db.user.destroy({
@@ -135,7 +162,7 @@ function remove(username) {
 
 function removeResponses(username) {
   if (_.isNil(username)) {
-    return false;
+    throw Error("Missing parameters");
   }
   return new Promise((resolve, reject) => {
     db.response.destroy({
@@ -150,7 +177,7 @@ function removeResponses(username) {
 
 function purge(username) {
   if (_.isNil(username)) {
-    return false;
+    throw Error("Missing parameters");
   }
   return new Promise((resolve, reject) => {
     let query = { where: { username: username } };
@@ -166,8 +193,9 @@ module.exports = {
   create,
   list,
   count,
-  listLinked,
+  listNames,
   get,
+  getLinked,
   update,
   remove,
   purge,

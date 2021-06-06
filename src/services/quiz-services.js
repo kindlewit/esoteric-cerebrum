@@ -27,7 +27,7 @@ async function create(doc) {
     await db.quiz.create(doc);
     return doc;
   } catch (e) {
-    throw Error(e);
+    throw e;
   }
 }
 
@@ -37,7 +37,7 @@ function list(limit = null, offset = null) {
       offset: offset,
       limit: limit,
       order: [
-        [ 'created_at', 'DESC' ]
+        ['created_at', 'DESC']
       ],
       raw: true
     })
@@ -52,7 +52,7 @@ function count() {
 
 function get(threeWords) {
   if (_.isNil(threeWords)) {
-    return false;
+    throw Error("Missing parameters");
   }
   return new Promise((resolve, reject) => {
     db.quiz.findByPk(threeWords, { raw: true })
@@ -61,9 +61,40 @@ function get(threeWords) {
   });
 }
 
+async function getLinked(threeWords, list) {
+  if (_.isNil(threeWords) || _.isNil(list)) {
+    throw Error("Missing parameters");
+  }
+  try {
+    let quizDoc = await db.quiz.findByPk(threeWords, { raw: true });
+    if (_.isEmpty(quizDoc)) {
+      return {}
+    }
+    let result = { ...quizDoc };
+    if (_.includes(list, "questions")) {
+      let query = { where: { three_words: threeWords }, attributes: { exclude: ['three_words'] }, raw: true };
+      let docs = await db.question.findAll(query);
+      result.questions = !_.isNil(docs) ? _.cloneDeep(docs) : [];
+    }
+    if (_.includes(list, "responses")) {
+      let query = { where: { three_words: threeWords }, attributes: { exclude: ['three_words'] }, raw: true };
+      let docs = await db.response.findAll(query);
+      result.responses = !_.isNil(docs) ? _.cloneDeep(docs) : [];
+    }
+    if (_.includes(list, "answers")) {
+      let query = { where: { three_words: threeWords }, attributes: { exclude: ['three_words'] }, raw: true };
+      let docs = await db.answer.findAll(query);
+      result.answers = !_.isNil(docs) ? _.cloneDeep(docs) : [];
+    }
+    return result;
+  } catch (e) {
+    throw e;
+  }
+}
+
 function update(threeWords, changes) {
   if (_.isNil(threeWords) || _.isNil(changes)) {
-    return false;
+    throw Error("Missing parameters");
   }
   return new Promise((resolve, reject) => {
     changes = sanitize(changes);
@@ -80,7 +111,7 @@ function update(threeWords, changes) {
 
 function remove(threeWords) {
   if (_.isNil(threeWords)) {
-    return false;
+    throw Error("Missing parameters");
   }
   return new Promise((resolve, reject) => {
     db.quiz.destroy({
@@ -95,7 +126,7 @@ function remove(threeWords) {
 
 function removeQuestions(threeWords) {
   if (_.isNil(threeWords)) {
-    return false;
+    throw Error("Missing parameters");
   }
   return new Promise((resolve, reject) => {
     db.question.destroy({
@@ -110,7 +141,7 @@ function removeQuestions(threeWords) {
 
 function removeResponses(threeWords) {
   if (_.isNil(threeWords)) {
-    return false;
+    throw Error("Missing parameters");
   }
   return new Promise((resolve, reject) => {
     db.response.destroy({
@@ -125,7 +156,7 @@ function removeResponses(threeWords) {
 
 function removeOptions(threeWords) {
   if (_.isNil(threeWords)) {
-    return false;
+    throw Error("Missing parameters");
   }
   return new Promise((resolve, reject) => {
     db.option.destroy({
@@ -140,7 +171,7 @@ function removeOptions(threeWords) {
 
 function removeAnswers(threeWords) {
   if (_.isNil(threeWords)) {
-    return false;
+    throw Error("Missing parameters");
   }
   return new Promise((resolve, reject) => {
     db.answer.destroy({
@@ -155,7 +186,7 @@ function removeAnswers(threeWords) {
 
 function purge(threeWords) {
   if (_.isNil(threeWords)) {
-    return false;
+    throw Error("Missing parameters");
   }
   return new Promise((resolve, reject) => {
     let query = { where: { three_words: threeWords } };
@@ -174,6 +205,7 @@ module.exports = {
   list,
   count,
   get,
+  getLinked,
   update,
   remove,
   purge,

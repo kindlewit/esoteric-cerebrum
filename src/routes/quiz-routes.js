@@ -43,7 +43,7 @@ const strRes = {
 
 module.exports = (fastify, opts, done) => {
   fastify.post('/quiz', multiObjRes, QuizHandler.createQuizHandler);
-  fastify.put('/quiz/:threeWords', multiObjRes, QuizHandler.updateQuizHandler);
+  fastify.patch('/quiz/:threeWords', multiObjRes, QuizHandler.updateQuizHandler);
   fastify.get('/quiz/:threeWords/_qr', strRes, QuizHandler.getQRcodeHandler);
   fastify.get('/quiz/:threeWords', QuizHandler.getQuizHandler);
   fastify.get('/quiz', multiObjRes, QuizHandler.listQuizHandler);

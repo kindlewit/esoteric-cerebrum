@@ -26,9 +26,11 @@ const multiObjRes = {
 };
 
 module.exports = (fastify, opts, done) => {
-  fastify.post('/user', multiObjRes, UserHandler.createUserHandler);
-  fastify.put('/user/:username', multiObjRes, UserHandler.updateUserHandler);
+  fastify.post('/user', multiObjRes, UserHandler.signupUserHandler);
+  fastify.patch('/user/:username', multiObjRes, UserHandler.updateUserHandler);
+  fastify.put('/user/:username/_login', UserHandler.loginUserHandler);
   fastify.get('/user/:username', UserHandler.getUserHandler);
+  fastify.delete('/user/:username', UserHandler.deleteUserHandler);
   fastify.get('/user', multiObjRes, UserHandler.listUserHandler);
   done();
 };

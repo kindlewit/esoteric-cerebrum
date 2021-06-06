@@ -67,11 +67,11 @@ db.response.belongsTo(db.user, {
 
 // Question <=> Response
 db.question.hasMany(db.response, {
-  foreignKey: "question_number",
+  foreignKey: "number",
   sourceKey: "number"
 });
 db.response.belongsTo(db.question, {
-  foreignKey: "question_number",
+  foreignKey: "number",
   sourceKey: "number"
 });
 
@@ -87,11 +87,11 @@ db.option.belongsTo(db.quiz, {
 
 // Question <=> Option
 db.question.hasMany(db.option, {
-  foreignKey: "question_number",
+  foreignKey: "number",
   sourceKey: "number"
 });
 db.option.belongsTo(db.question, {
-  foreignKey: "question_number",
+  foreignKey: "number",
   sourceKey: "number"
 });
 
@@ -107,11 +107,11 @@ db.answer.belongsTo(db.quiz, {
 
 // Question <=> Answer
 db.question.hasMany(db.answer, {
-  foreignKey: "question_number",
+  foreignKey: "number",
   sourceKey: "number"
 });
 db.answer.belongsTo(db.question, {
-  foreignKey: "question_number",
+  foreignKey: "number",
   sourceKey: "number"
 });
 

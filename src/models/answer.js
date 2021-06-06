@@ -9,7 +9,7 @@ module.exports = (sequelize, Sequelize) => {
         primaryKey: true,
         allowNull: false
       },
-      question_number: {
+      number: {
         type: Sequelize.INTEGER,
         primaryKey: true,
         allowNull: false

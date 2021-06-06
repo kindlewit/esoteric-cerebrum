@@ -3,7 +3,7 @@
 const _ = require('lodash');
 const User = require('../services/user-services');
 
-function createUserHandler(request, reply) {
+function signupUserHandler(request, reply) {
   if (
     _.isNil(request.body) ||
     !_.isObject(request.body) ||
@@ -15,7 +15,7 @@ function createUserHandler(request, reply) {
   }
   User.create(request.body)
     .then(doc => {
-      reply.status(201).send(doc);
+      reply.code(201).send(doc);
     })
     .catch(e => {
       request.log.error(e);
@@ -27,17 +27,16 @@ function listUserHandler(request, reply) {
   if (_.has(request.query, 'count') && request.query.count.toLowerCase() === 'true') {
     User.count()
       .then(count => {
-        reply.status(200).send({ total_docs: count });
+        reply.code(200).send({ total_docs: count });
       })
       .catch(e => {
         request.log.error(e);
         reply.code(500).send();
       });
-
   } else {
     User.list()
       .then(docs => {
-        reply.status(200).send({ total_docs: docs.length, docs });
+        reply.code(200).send({ total_docs: docs.length, docs });
       })
       .catch(e => {
         request.log.error(e);
@@ -46,14 +45,31 @@ function listUserHandler(request, reply) {
   }
 }
 
+function listUsernamesHandler(request, reply) {
+  User.listNames()
+    .then(docs => {
+      if (_.isEmpty(docs)) {
+        reply.code(404).send();
+      }
+      reply.code(200).send(docs);
+    })
+    .catch(e => {
+      request.log.error(e);
+      reply.code(500).send();
+    });
+}
+
 function getUserHandler(request, reply) {
   if (_.isNil(request.params.username)) {
     reply.code(400).send();
   }
-  if (_.has(request.query, "linked")) {
-    User.listLinked(request.params.username, request.query.linked.split(','))
+  if (_.has(request.query, 'linked')) {
+    User.getLinked(request.params.username, request.query.linked.split(','))
       .then(doc => {
-        reply.status(200).send(doc);
+        if (_.isEmpty(doc)) {
+          reply.code(404).send();
+        }
+        reply.code(200).send(doc);
       })
       .catch(e => {
         request.log.error(e);
@@ -62,7 +78,10 @@ function getUserHandler(request, reply) {
   } else {
     User.get(request.params.username)
       .then(doc => {
-        reply.status(200).send(doc);
+        if (_.isEmpty(doc)) {
+          reply.code(404).send();
+        }
+        reply.code(200).send(doc);
       })
       .catch(e => {
         request.log.error(e);
@@ -71,6 +90,29 @@ function getUserHandler(request, reply) {
   }
 }
 
+function loginUserHandler(request, reply) {
+  if (
+    _.isNil(request.params.username) ||
+    _.isNil(request.body) ||
+    _.isNil(request.body.password)
+  ) {
+    reply.code(400).send();
+  }
+  User.get(request.params.username, true)
+    .then(doc => {
+      if (_.isEmpty(doc)) {
+        reply.code(404).send();
+      }
+      if (request.body.password === doc.password) {
+        reply.code(200).send(_.omit(doc, 'password'));
+      }
+      reply.code(401).send();
+    })
+    .catch(e => {
+      request.log.error(e);
+      reply.code(500).send();
+    });
+}
 
 function updateUserHandler(request, reply) {
   if (_.isNil(request.params.username) || _.isNil(request.body)) {
@@ -78,7 +120,10 @@ function updateUserHandler(request, reply) {
   }
   User.update(request.params.username, request.body)
     .then(doc => {
-      reply.status(201).send(doc);
+      if (_.isEmpty(doc)) {
+        reply.code(404).send();
+      }
+      reply.code(201).send(doc);
     })
     .catch(e => {
       request.log.error(e);
@@ -90,7 +135,7 @@ function deleteUserHandler(request, reply) {
   if (_.isNil(request.params.username)) {
     reply.code(400).send();
   }
-  if (_.has(request.query, "purge") && request.query.purge.toLowerCase() === 'true') {
+  if (_.has(request.query, 'purge') && request.query.purge.toLowerCase() === 'true') {
     User.purge(request.params.username)
       .then(() => {
         reply.code(200).send();
@@ -112,9 +157,11 @@ function deleteUserHandler(request, reply) {
 }
 
 module.exports = {
-  createUserHandler,
+  signupUserHandler,
   listUserHandler,
+  listUsernamesHandler,
   getUserHandler,
+  loginUserHandler,
   updateUserHandler,
   deleteUserHandler
 };

@@ -7,7 +7,8 @@ function sanitize(doc) {
   let cleanObj = _.cloneDeep(doc);
   for (let key in doc) {
     if (_.isNil(doc[key]) || key === "created_at") {
-      _.omit(doc, key);
+      // Cannot insert user-defined created_at nor can it be altered
+      _.omit(cleanObj, key);
     }
   }
   if (!_.isNil(doc.duration)) {
@@ -19,14 +20,13 @@ function sanitize(doc) {
   return cleanObj;
 }
 
-async function create(doc) {
-  try {
-    doc = sanitize(doc);
-    await db.user.create(doc);
-    return doc;
-  } catch (e) {
-    throw e;
-  }
+function create(doc) {
+  return new Promise((resolve, reject) => {
+    db.user.create(sanitize(doc))
+    .then(() => db.user.findByPk(doc.username))
+    .then(doc => resolve(doc))
+    .catch(e => reject(e));
+  });
 }
 
 function list(limit = null, offset = null) {
@@ -41,7 +41,7 @@ function list(limit = null, offset = null) {
         exclude: ['password']
       },
       raw: true
-    }
+    };
     db.user.findAll(query)
       .then(docs => resolve(_.cloneDeep(docs)))
       .catch(e => reject(e));
@@ -62,7 +62,7 @@ function listNames() {
     })
       .then(docs => resolve(_.chain(docs).cloneDeep().map('username').value()))
       .catch(e => reject(e));
-  })
+  });
 }
 
 function get(username, includePass = false) {
@@ -70,7 +70,7 @@ function get(username, includePass = false) {
     throw Error("Missing parameters");
   }
   return new Promise((resolve, reject) => {
-    let query = { raw: true }
+    let query = { raw: true };
     if (!includePass) {
       query.attributes = { exclude: ['password'] };
     }
@@ -84,48 +84,44 @@ async function getLinked(username, list) {
   if (_.isEmpty(list) || _.isNil(username)) {
     throw Error("Missing parameters");
   }
-  try {
-    let userDoc = await db.user.findByPk(username, { raw: true, attributes: { exclude: ['password'] } });
-    if (_.isEmpty(userDoc)) {
-      return {}
-    }
-    let result = { ...userDoc };
-    if (_.includes(list, "quizzes")) {
-      let query = {
-        where: {
-          creator: username
-        },
-        order: [
-          ['created_at', 'DESC']
-        ],
-        attributes: {
-          exclude: ['creator', 'url', 'file_upload']
-        },
-        raw: true
-      }
-      let docs = await db.quiz.findAll(query);
-      result.quizzes = !_.isEmpty(docs) ? _.cloneDeep(docs) : [];
-    }
-    if (_.includes(list, "responses")) {
-      let query = {
-        where: {
-          username: username
-        },
-        order: [
-          ['created_at', 'DESC']
-        ],
-        attributes: {
-          exclude: ['username']
-        },
-        raw: true
-      }
-      let docs = await db.response.findAll(query);
-      result.responses = !_.isEmpty(docs) ? _.cloneDeep(docs) : [];
-    }
-    return result;
-  } catch (e) {
-    throw e;
+  let userDoc = await db.user.findByPk(username, { raw: true, attributes: { exclude: ['password'] } });
+  if (_.isEmpty(userDoc)) {
+    return {};
   }
+  let result = { ...userDoc };
+  if (_.includes(list, "quizzes")) {
+    let query = {
+      where: {
+        username: username
+      },
+      order: [
+        ['created_at', 'DESC']
+      ],
+      attributes: {
+        exclude: ['username', 'url', 'file_upload']
+      },
+      raw: true
+    };
+    let docs = await db.quiz.findAll(query);
+    result.quizzes = !_.isEmpty(docs) ? _.cloneDeep(docs) : [];
+  }
+  if (_.includes(list, "responses")) {
+    let query = {
+      where: {
+        username: username
+      },
+      order: [
+        ['created_at', 'DESC']
+      ],
+      attributes: {
+        exclude: ['username']
+      },
+      raw: true
+    };
+    let docs = await db.response.findAll(query);
+    result.responses = !_.isEmpty(docs) ? _.cloneDeep(docs) : [];
+  }
+  return result;
 }
 
 function update(username, changes) {
@@ -180,7 +176,11 @@ function purge(username) {
     throw Error("Missing parameters");
   }
   return new Promise((resolve, reject) => {
-    let query = { where: { username: username } };
+    let query = {
+      where: {
+        username: username
+      }
+    };
     db.user.destroy(query)
       .then(() => db.quiz.destroy(query))
       .then(() => db.response.destroy(query))

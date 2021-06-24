@@ -8,7 +8,8 @@ function sanitize(doc) {
   let cleanObj = _.cloneDeep(doc);
   for (let key in doc) {
     if (_.isNil(doc[key]) || key === "created_at" || key === "three_words") {
-      _.omit(doc, key);
+      // Cannot insert user-defined created_at / three_words nor can it be altered
+      _.omit(cleanObj, key);
     }
   }
   if (!_.isNil(doc.duration) && _.isString(doc.duration)) {
@@ -21,14 +22,10 @@ function sanitize(doc) {
 }
 
 async function create(doc) {
-  try {
-    doc = sanitize(doc);
-    doc.three_words = await generateThreeWords("-");
-    await db.quiz.create(doc);
-    return doc;
-  } catch (e) {
-    throw e;
-  }
+  doc = sanitize(doc);
+  doc.three_words = await generateThreeWords("-");
+  await db.quiz.create(doc);
+  return db.quiz.findByPk(doc.three_words);
 }
 
 function list(limit = null, offset = null) {
@@ -65,31 +62,33 @@ async function getLinked(threeWords, list) {
   if (_.isNil(threeWords) || _.isNil(list)) {
     throw Error("Missing parameters");
   }
-  try {
-    let quizDoc = await db.quiz.findByPk(threeWords, { raw: true });
-    if (_.isEmpty(quizDoc)) {
-      return {}
-    }
-    let result = { ...quizDoc };
-    if (_.includes(list, "questions")) {
-      let query = { where: { three_words: threeWords }, attributes: { exclude: ['three_words'] }, raw: true };
-      let docs = await db.question.findAll(query);
-      result.questions = !_.isNil(docs) ? _.cloneDeep(docs) : [];
-    }
-    if (_.includes(list, "responses")) {
-      let query = { where: { three_words: threeWords }, attributes: { exclude: ['three_words'] }, raw: true };
-      let docs = await db.response.findAll(query);
-      result.responses = !_.isNil(docs) ? _.cloneDeep(docs) : [];
-    }
-    if (_.includes(list, "answers")) {
-      let query = { where: { three_words: threeWords }, attributes: { exclude: ['three_words'] }, raw: true };
-      let docs = await db.answer.findAll(query);
-      result.answers = !_.isNil(docs) ? _.cloneDeep(docs) : [];
-    }
-    return result;
-  } catch (e) {
-    throw e;
+  let quizDoc = await db.quiz.findByPk(threeWords, { raw: true });
+  if (_.isEmpty(quizDoc)) {
+    return {};
   }
+  let result = { ...quizDoc };
+  let query = {
+    where: {
+      three_words: threeWords
+    },
+    attributes: {
+      exclude: ['three_words']
+    },
+    raw: true
+  };
+  if (_.includes(list, "questions")) {
+    let docs = await db.question.findAll(query);
+    result.questions = !_.isNil(docs) ? _.cloneDeep(docs) : [];
+  }
+  if (_.includes(list, "responses")) {
+    let docs = await db.response.findAll(query);
+    result.responses = !_.isNil(docs) ? _.cloneDeep(docs) : [];
+  }
+  if (_.includes(list, "answers")) {
+    let docs = await db.answer.findAll(query);
+    result.answers = !_.isNil(docs) ? _.cloneDeep(docs) : [];
+  }
+  return result;
 }
 
 function update(threeWords, changes) {
@@ -189,7 +188,11 @@ function purge(threeWords) {
     throw Error("Missing parameters");
   }
   return new Promise((resolve, reject) => {
-    let query = { where: { three_words: threeWords } };
+    let query = {
+      where: {
+        three_words: threeWords
+      }
+    };
     db.quiz.destroy(query)
       .then(() => db.question.destroy(query))
       .then(() => db.response.destroy(query))

@@ -4,14 +4,23 @@ const _ = require('lodash');
 const Question = require('../services/question-services');
 
 function createQuestionHandler(request, reply) {
-  if (_.isNil(request.body)) {
+  if (_.isNil(request.body) || _.isNil(request.body.three_words)) {
     reply.code(400).send();
   }
-  if (_.has(request.query, 'multiple') && request.query.multiple.toLowerCase() === 'true' && _.isArray(request.body)) {
+  if (_.has(request.query, 'multiple') && request.query.multiple.toLowerCase() === 'true') {
     // Insert Multiple Questions
-    Promise.all(request.body.map(Question.create))
-      .then(docs => {
-        reply.code(201).send(docs);
+    if (_.isNil(request.body.questions) || !_.isArray(request.body.questions) || _.isEmpty(request.body.questions)) {
+      reply.code(400).send();
+    }
+    let questions = _.chain(request.body.questions)
+      .map(qn => {
+        return { ...qn, three_words: request.body.three_words };
+      })
+      .filter(qn => _.has(qn, 'number') && _.has(qn, 'answer_format') && _.has(qn, 'text'))
+      .value();
+    Promise.all(questions.map(Question.create))
+      .then(() => {
+        reply.code(201).send(questions);
       })
       .catch(e => {
         request.log.error(e);
@@ -19,7 +28,7 @@ function createQuestionHandler(request, reply) {
       });
   } else {
     // Insert One Question
-    if (_.isNil(request.body.three_words) || _.isNil(request.body.number) || _.isNil(request.body.answer_format)) {
+    if (_.isNil(request.body.number) || _.isNil(request.body.answer_format) || _.isNil(request.body.text)) {
       reply.code(400).send();
     }
     Question.create(request.body)
@@ -70,7 +79,9 @@ function listOrGetQuestionHandler(request, reply) {
         });
     }
   } else {
-    Question.list()
+    let limit = _.has(request.query, 'limit') ? parseInt(request.query.limit) : null;
+    let offset = _.has(request.query, 'offset') ? parseInt(request.query.offset) : null;
+    Question.list(limit, offset)
       .then(docs => {
         reply.code(200).send({ total_docs: docs.length, docs });
       })

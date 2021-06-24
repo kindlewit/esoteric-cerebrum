@@ -5,7 +5,7 @@ const Quiz = require('../services/quiz-services');
 const generateQuizQRCode = require('../utils/qr-utils').generateQuizQRCode;
 
 function createQuizHandler(request, reply) {
-  if (_.isNil(request.body) || !_.isObject(request.body) || _.isNil(request.body.creator)) {
+  if (_.isNil(request.body) || !_.isObject(request.body) || _.isNil(request.body.username)) {
     reply.code(400).send();
   }
   Quiz.create(request.body)
@@ -19,7 +19,7 @@ function createQuizHandler(request, reply) {
 }
 
 function listQuizHandler(request, reply) {
-  if (_.has(request.query, 'count') && request.query.count.toLowerCase() === 'true') {
+  if (_.has(request.query, 'count') && request.query.count) {
     Quiz.count()
       .then(count => {
         reply.code(200).send({ total_docs: count });
@@ -28,11 +28,12 @@ function listQuizHandler(request, reply) {
         request.log.error(e);
         reply.code(500).send();
       });
-
   } else {
-    Quiz.list()
+    let limit = _.has(request.query, 'limit') ? parseInt(request.query.limit) : null;
+    let offset = _.has(request.query, 'offset') ? parseInt(request.query.offset) : null;
+    Quiz.list(limit, offset)
       .then(docs => {
-        reply.code(200).send({ total_docs: docs.length, docs });
+        reply.code(200).send({ total_docs: docs.length, docs: docs });
       })
       .catch(e => {
         request.log.error(e);
@@ -88,7 +89,7 @@ function updateQuizHandler(request, reply) {
       if (_.isEmpty(doc)) {
         reply.code(404).send();
       }
-      reply.code(201).send(doc);
+      reply.code(200).send(doc);
     })
     .catch(e => {
       request.log.error(e);
@@ -100,10 +101,10 @@ function deleteQuizHandler(request, reply) {
   if (_.isNil(request.params.threeWords)) {
     reply.code(400).send();
   }
-  if (_.has(request.query, 'purge') && request.query.purge.toLowerCase() === 'true') {
+  if (_.has(request.query, 'purge') && request.query.purge) {
     Quiz.purge(request.params.threeWords)
       .then(() => {
-        reply.code(200).send();
+        reply.code(204).send();
       })
       .catch(e => {
         request.log.error(e);
@@ -112,7 +113,7 @@ function deleteQuizHandler(request, reply) {
   } else {
     Quiz.remove(request.params.threeWords)
       .then(() => {
-        reply.code(200).send();
+        reply.code(204).send();
       })
       .catch(e => {
         request.log.error(e);

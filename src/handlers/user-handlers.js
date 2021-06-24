@@ -2,6 +2,7 @@
 
 const _ = require('lodash');
 const User = require('../services/user-services');
+const cacheUtils = require('../utils/cache-utils');
 
 function signupUserHandler(request, reply) {
   if (
@@ -34,7 +35,9 @@ function listUserHandler(request, reply) {
         reply.code(500).send();
       });
   } else {
-    User.list()
+    let limit = _.has(request.query, 'limit') ? parseInt(request.query.limit) : null;
+    let offset = _.has(request.query, 'offset') ? parseInt(request.query.offset) : null;
+    User.list(limit, offset)
       .then(docs => {
         reply.code(200).send({ total_docs: docs.length, docs });
       })
@@ -51,7 +54,7 @@ function listUsernamesHandler(request, reply) {
       if (_.isEmpty(docs)) {
         reply.code(404).send();
       }
-      reply.code(200).send(docs);
+      reply.code(200).send({ total_docs: docs.length, docs });
     })
     .catch(e => {
       request.log.error(e);
@@ -90,31 +93,47 @@ function getUserHandler(request, reply) {
   }
 }
 
-function loginUserHandler(request, reply) {
+async function loginUserHandler(request, reply) {
   if (
     _.isNil(request.params.username) ||
     _.isNil(request.body) ||
     _.isNil(request.body.password)
   ) {
-    reply.code(400).send();
+    return reply.code(400).send();
   }
-  User.get(request.params.username, true)
-    .then(doc => {
-      if (_.isEmpty(doc)) {
-        reply.code(404).send();
-      }
-      if (request.body.password === doc.password) {
-        reply.code(200).send(_.omit(doc, 'password'));
-      }
-      reply.code(401).send();
-    })
-    .catch(e => {
-      request.log.error(e);
-      reply.code(500).send();
-    });
+  try {
+    let doc = await User.get(request.params.username, true);
+    if (_.isEmpty(doc)) {
+      return reply.code(404).send();
+    }
+    if (request.body.password === doc.password) {
+      // Create login cache
+      let cacheData = {
+        username: request.params.username,
+        login_timestamp: new Date().getTime(),
+        expiry_timestamp: new Date().getTime() + 7200000 // +2 hours
+      };
+      let key = await cacheUtils.setUserLoginCache(request.params.username, cacheData);
+      reply.setCookie('session', Buffer.from(key).toString('base64url'), { secure: false })
+        .code(200)
+        .send();
+    } else {
+      return reply.code(401).send();
+    }
+  } catch (e) {
+    request.log.error(e);
+    return reply.code(500).send();
+  }
 }
 
 function updateUserHandler(request, reply) {
+  /**
+   *
+   *
+   * ENSURE THAT ONLY LOGGED IN USER CAN UPDATE ONLY HIS OWN PROFILE
+   *
+   *
+   */
   if (_.isNil(request.params.username) || _.isNil(request.body)) {
     reply.code(400).send();
   }
@@ -123,7 +142,7 @@ function updateUserHandler(request, reply) {
       if (_.isEmpty(doc)) {
         reply.code(404).send();
       }
-      reply.code(201).send(doc);
+      reply.code(200).send(doc);
     })
     .catch(e => {
       request.log.error(e);
@@ -132,6 +151,13 @@ function updateUserHandler(request, reply) {
 }
 
 function deleteUserHandler(request, reply) {
+  /**
+   *
+   *
+   * ENSURE THAT ONLY LOGGED IN USER CAN DELETE ONLY HIS OWN PROFILE
+   *
+   *
+   */
   if (_.isNil(request.params.username)) {
     reply.code(400).send();
   }
@@ -147,7 +173,7 @@ function deleteUserHandler(request, reply) {
   } else {
     User.remove(request.params.username)
       .then(() => {
-        reply.code(200).send();
+        reply.code(204).send();
       })
       .catch(e => {
         request.log.error(e);

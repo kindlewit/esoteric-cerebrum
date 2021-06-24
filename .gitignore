@@ -1,9 +1,10 @@
 # ENV
 .env
+env/
 
 # FOLDERS
 node_modules/
-py-scripts/
+scripts/
 tests/
 resources/
 
@@ -11,8 +12,11 @@ resources/
 config.js
 index.js
 !src/models/index.js
+!src/index.js
 package-lock.json
 psql-setup.sql
 words_alpha.txt
+*.svg
+*.png
 
 src/utils/segregate.js

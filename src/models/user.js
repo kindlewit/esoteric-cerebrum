@@ -28,6 +28,7 @@ module.exports = (sequelize, Sequelize) => {
     {
       underscored: true,
       timestamps: true,
+      createdAt: 'created_at',
       updatedAt: false,
       freezeTableName: true
     }

@@ -18,7 +18,11 @@ module.exports = (sequelize, Sequelize) => {
         type: Sequelize.BOOLEAN,
         defaultValue: true
       },
-      creator: Sequelize.STRING
+      is_live: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: false
+      },
+      username: Sequelize.STRING
     },
     {
       underscored: true,

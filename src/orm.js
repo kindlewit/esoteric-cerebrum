@@ -27,11 +27,11 @@ const db = {
 
 // User <=> Quiz
 db.user.hasMany(db.quiz, {
-  foreignKey: "creator",
+  foreignKey: "username",
   sourceKey: "username"
 });
 db.quiz.belongsTo(db.user, {
-  foreignKey: "creator",
+  foreignKey: "username",
   sourceKey: "username"
 });
 

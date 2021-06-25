@@ -10,41 +10,81 @@ const client = redis.createClient({
   port: RDS_PORT
 });
 
-const getCacheKey = promisify(client.get).bind(client);
-const setCacheKey = promisify(client.set).bind(client);
-const getKeys = promisify(client.keys).bind(client);
+// Client Promises
+const setKey = promisify(client.set).bind(client);
+const getKey = promisify(client.get).bind(client);
+const deleteKey = promisify(client.del).bind(client);
+const getAllKeys = promisify(client.keys).bind(client);
 
-async function setUserLoginCache(username, data) {
+
+// User cache fns
+async function setLoginCache(username, data) {
   let key = `UserLoginCache_${username}`;
-  await setCacheKey(key, JSON.stringify(data))
+  await setKey(key, JSON.stringify(data));
   return key;
 }
 
-function getUserLoginCache(username) {
-  let key = `UserLoginCache_${username}`;
-  return getCacheKey(key);
+async function getLoginCache(usernameOrKey) {
+  if (usernameOrKey.includes('UserLoginCache_')) {
+    // Get by Key
+    return JSON.parse(await getKey(usernameOrKey));
+  } else {
+    // Get by username
+    let key = `UserLoginCache_${usernameOrKey}`;
+    return JSON.parse(await getKey(key));
+  }
 }
 
+async function deleteLoginCache(usernameOrKey) {
+  if (usernameOrKey.includes('UserLoginCache_')) {
+    // Delete by Key
+    return JSON.parse(await getKey(usernameOrKey));
+  } else {
+    // Delete by username
+    let key = `UserLoginCache_${usernameOrKey}`;
+    return await deleteKey(key);
+  }
+}
+
+async function isValid(key) {
+  let data = JSON.parse(await getKey(key));
+  if (data.expiry_timestamp && data.expiry_timestamp > new Date().getTime()) {
+    return true;
+  }
+  return false;
+}
+
+// Response cache fns
 async function setResponseCache(threeWords, username, data) {
   threeWords = threeWords.split('-').join('');
-  let key = `ResponseCache_${username}_${threeWords}`;
-  await setCacheKey(key, JSON.stringify(data));
+  let key = `ResponseCache_${threeWords}_${username}`;
+  await setKey(key, JSON.stringify(data));
   return key;
 }
 
-function getResponseCache(threeWords, username) {
+async function getResponseCache(threeWords, username) {
   threeWords = threeWords.split('-').join('');
-  let key = `ResponseCache_${username}_${threeWords}`;
-  return getCacheKey(key);
+  let key = `ResponseCache_${threeWords}_${username}`;
+  return JSON.parse(await getKey(key));
+}
+
+async function deleteResponseCache(threeWords, username = null) {
+  threeWords = threeWords.split('-').join('');
+  let key = username ? `ResponseCache_${threeWords}_${username}` : `ResponseCache_${threeWords}_*`;
+  return await deleteKey(key);
 }
 
 module.exports = {
-  setCacheKey,
-  getCacheKey,
-  getKeys,
-  setUserLoginCache,
-  getUserLoginCache,
+  setLoginCache,
+  getLoginCache,
+  deleteLoginCache,
   setResponseCache,
   getResponseCache,
+  deleteResponseCache,
+  isValid,
+  setKey,
+  getKey,
+  deleteKey,
+  getAllKeys,
   client
 };

@@ -4,6 +4,19 @@ const _ = require('lodash');
 const User = require('../services/user-services');
 const cacheUtils = require('../utils/cache-utils');
 
+async function userCookieValidator(request, reply, next) {
+  let cookie = request.unsignCookie(request.cookies.session);
+  if (_.has(cookie, 'value') && !_.isEmpty(cookie.value) && cookie.valid) {
+    // Cookie is valid
+    let session = Buffer.from(cookie.value, 'base64url').toString('ascii');
+    if (await cacheUtils.isValid(session)) {
+      // Session key is valid. User verified.
+      return next();
+    }
+  }
+  return reply.code(401).send();
+}
+
 function signupUserHandler(request, reply) {
   if (
     _.isNil(request.body) ||
@@ -28,22 +41,22 @@ function listUserHandler(request, reply) {
   if (_.has(request.query, 'count') && request.query.count.toLowerCase() === 'true') {
     User.count()
       .then(count => {
-        reply.code(200).send({ total_docs: count });
+        return reply.code(200).send({ total_docs: count });
       })
       .catch(e => {
         request.log.error(e);
-        reply.code(500).send();
+        return reply.code(500).send();
       });
   } else {
     let limit = _.has(request.query, 'limit') ? parseInt(request.query.limit) : null;
     let offset = _.has(request.query, 'offset') ? parseInt(request.query.offset) : null;
     User.list(limit, offset)
       .then(docs => {
-        reply.code(200).send({ total_docs: docs.length, docs });
+        return reply.code(200).send({ total_docs: docs.length, docs });
       })
       .catch(e => {
         request.log.error(e);
-        reply.code(500).send();
+        return reply.code(500).send();
       });
   }
 }
@@ -113,8 +126,9 @@ async function loginUserHandler(request, reply) {
         login_timestamp: new Date().getTime(),
         expiry_timestamp: new Date().getTime() + 7200000 // +2 hours
       };
-      let key = await cacheUtils.setUserLoginCache(request.params.username, cacheData);
-      reply.setCookie('session', Buffer.from(key).toString('base64url'), { secure: false })
+      let key = await cacheUtils.setLoginCache(request.params.username, cacheData);
+      let session = Buffer.from(key).toString('base64url');
+      reply.setCookie('session', session, { secure: false, path: '/', signed: true })
         .code(200)
         .send();
     } else {
@@ -128,11 +142,7 @@ async function loginUserHandler(request, reply) {
 
 function updateUserHandler(request, reply) {
   /**
-   *
-   *
-   * ENSURE THAT ONLY LOGGED IN USER CAN UPDATE ONLY HIS OWN PROFILE
-   *
-   *
+   * Cookie verification in pre-handler
    */
   if (_.isNil(request.params.username) || _.isNil(request.body)) {
     reply.code(400).send();
@@ -152,12 +162,8 @@ function updateUserHandler(request, reply) {
 
 function deleteUserHandler(request, reply) {
   /**
-   *
-   *
-   * ENSURE THAT ONLY LOGGED IN USER CAN DELETE ONLY HIS OWN PROFILE
-   *
-   *
-   */
+    * Cookie verification in pre-handler
+    */
   if (_.isNil(request.params.username)) {
     reply.code(400).send();
   }
@@ -183,6 +189,7 @@ function deleteUserHandler(request, reply) {
 }
 
 module.exports = {
+  userCookieValidator,
   signupUserHandler,
   listUserHandler,
   listUsernamesHandler,

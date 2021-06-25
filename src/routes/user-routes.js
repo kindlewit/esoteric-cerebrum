@@ -1,36 +1,46 @@
 "use strict";
 
 const UserHandler = require('../handlers/user-handlers');
-
-const multiObjRes = {
-  schema: {
-    response: {
-      200: {
-        type: 'object',
-        properties: {
-          total_docs: { type: 'number' },
-          docs: { type: 'array' }
-        }
-      },
-      400: {
-        type: 'null'
-      },
-      404: {
-        type: 'null'
-      },
-      500: {
-        type: 'null'
-      }
-    }
-  }
-};
+const { signupSchema, listSchema, getSchema, loginSchmea, updateSchema, deleteSchema } = require('./user-schema');
 
 module.exports = (fastify, opts, done) => {
-  fastify.post('/user', multiObjRes, UserHandler.signupUserHandler);
-  fastify.patch('/user/:username', multiObjRes, UserHandler.updateUserHandler);
-  fastify.put('/user/:username/_login', UserHandler.loginUserHandler);
-  fastify.get('/user/:username', UserHandler.getUserHandler);
-  fastify.delete('/user/:username', UserHandler.deleteUserHandler);
-  fastify.get('/user', multiObjRes, UserHandler.listUserHandler);
+  fastify.route({
+    url: '/user',
+    method: 'POST',
+    schema: signupSchema,
+    handler: UserHandler.signupUserHandler
+  });
+  fastify.route({
+    url: '/user',
+    method: 'GET',
+    schema: listSchema,
+    handler: UserHandler.listUserHandler
+  });
+  fastify.route({
+    url: '/user/:username',
+    method: 'GET',
+    schema: getSchema,
+    handler: UserHandler.getUserHandler
+  });
+  fastify.route({
+    url: '/user:username',
+    method: 'PATCH',
+    preHandler: UserHandler.userCookieValidator,
+    schema: updateSchema,
+    handler: UserHandler.updateUserHandler
+  });
+  fastify.route({
+    url: '/user/:username',
+    method: 'DELETE',
+    preHandler: UserHandler.userCookieValidator,
+    schema: deleteSchema,
+    handler: UserHandler.deleteUserHandler
+  });
+  fastify.route({
+    url: '/user/:username/_login',
+    method: 'PUT',
+    schema: loginSchmea,
+    handler: UserHandler.loginUserHandler
+  });
   done();
 };

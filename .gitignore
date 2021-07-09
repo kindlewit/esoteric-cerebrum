@@ -1,11 +1,12 @@
 # ENV
 .env
+*.env
 env/
 
 # FOLDERS
 node_modules/
 scripts/
-tests/
+tests/*
 resources/
 
 # FILES
@@ -20,3 +21,6 @@ words_alpha.txt
 *.png
 
 src/utils/segregate.js
+
+# INCLUDING TESTS
+!tests/*.test.js

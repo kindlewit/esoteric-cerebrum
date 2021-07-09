@@ -1,18 +1,9 @@
 "use strict";
 
 const Sequelize = require('sequelize');
-const config = require('../config');
+const { DB_URI } = require('../config');
 
-const sequelize = new Sequelize(
-  config.DB_NAME,
-  config.DB_USER,
-  config.DB_PASS,
-  {
-    host: config.DB_HOST,
-    port: config.DB_PORT,
-    dialect: 'postgres'
-  }
-);
+const sequelize = new Sequelize(DB_URI, { logging: false });
 
 const db = {
   Sequelize: Sequelize,
@@ -116,7 +107,7 @@ db.answer.belongsTo(db.question, {
 });
 
 // Option <=> Answer
-db.option.hasOne(db.answer, {
+db.option.hasMany(db.answer, {
   foreignKey: "character",
   sourceKey: "character"
 });

@@ -1,23 +1,45 @@
 const idealObjSchema = {
   type: 'object',
   properties: {
-    username: { type: 'string' },
-    email: { type: 'string' },
-    display_name: {
+    three_words: { type: 'string' },
+    url: {
       oneOf: [
         { type: 'string' },
         { type: 'null' }
       ]
     },
-    attended: {
+    title: {
       oneOf: [
-        { type: 'null' },
-        { type: 'array' }
+        { type: 'string' },
+        { type: 'null' }
       ]
     },
-    created_at: { type: 'string' }
+    description: {
+      oneOf: [
+        { type: 'string' },
+        { type: 'null' }
+      ]
+    },
+    duration: {
+      oneOf: [
+        { type: 'number' },
+        { type: 'null' }
+      ]
+    },
+    topics: {
+      oneOf: [
+        { type: 'array' },
+        { type: 'null' }
+      ]
+    },
+    file_upload: { type: 'boolean' },
+    is_live: { type: 'boolean' },
+    username: { type: 'string' },
+    created_at: { type: 'string' },
+    updated_at: { type: 'string' }
   },
   required: [
+    "three_words",
     "username"
   ],
   additionalProperties: true
@@ -25,39 +47,39 @@ const idealObjSchema = {
 const arrayObjSchema = {
   type: 'object',
   properties: {
-    total_docs: { type: 'number' },
+    total_docs: { type: 'integer' },
     docs: { type: 'array' }
-  },
-  additionalProperties: true
+  }
 };
 
 module.exports = {
-  signupSchema: {
-    body: {
-      username: { type: 'string' },
-      password: { type: 'string' },
-      email: { type: 'string' }
-    },
+  createSchema: {
+    body: { type: 'object' },
     response: {
       201: idealObjSchema,
       400: { type: 'null' },
+      401: { type: 'null' },
+      403: { type: 'null' },
       500: { type: 'null' }
     }
   },
   listSchema: {
     querystring: {
-      count: { type: 'boolean' },
       limit: { type: 'integer' },
-      offset: { type: 'integer' }
+      offset: { type: 'integer' },
+      count: { type: 'boolean' }
     },
     response: {
       200: arrayObjSchema,
+      400: { type: 'null' },
+      404: { type: 'null' },
       500: { type: 'null' }
-    }
+    },
+    additionalProperties: true
   },
   getSchema: {
     params: {
-      username: { type: 'string' }
+      threeWords: { type: 'string' }
     },
     querystring: {
       linked: { type: 'string' }
@@ -69,24 +91,19 @@ module.exports = {
       500: { type: 'null' }
     }
   },
-  loginSchmea: {
+  qrSchema: {
     params: {
-      username: { type: 'string' }
-    },
-    body: {
-      password: { type: 'string' }
+      threeWords: { type: 'string' }
     },
     response: {
-      200: { type: 'null' },
+      200: { type: 'string' },
       400: { type: 'null' },
-      401: { type: 'null' },
-      404: { type: 'null' },
       500: { type: 'null' }
-    }
+    },
   },
   updateSchema: {
     params: {
-      username: { type: 'string' }
+      threeWords: { type: 'string' }
     },
     body: { type: 'object' },
     response: {
@@ -100,16 +117,16 @@ module.exports = {
   },
   deleteSchema: {
     params: {
-      username: { type: 'string' }
+      threeWords: { type: 'string' }
     },
     querystring: {
-      purge: { type: 'boolean' }
+      purge: { type: 'string' }
     },
     response: {
       204: { type: 'null' },
-      400: { type: 'null' },
       401: { type: 'null' },
       403: { type: 'null' },
+      400: { type: 'null' },
       500: { type: 'null' }
     }
   }

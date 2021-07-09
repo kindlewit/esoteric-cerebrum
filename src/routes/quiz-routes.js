@@ -1,51 +1,62 @@
 "use strict";
 
 const QuizHandler = require('../handlers/quiz-handlers');
-
-const multiObjRes = {
-  schema: {
-    response: {
-      200: {
-        type: 'object',
-        properties: {
-          total_docs: { type: 'number' },
-          docs: { type: 'array' }
-        }
-      },
-      400: {
-        type: 'null'
-      },
-      404: {
-        type: 'null'
-      },
-      500: {
-        type: 'null'
-      }
-    }
-  }
-};
-
-const strRes = {
-  schema: {
-    response: {
-      200: {
-        type: 'string'
-      },
-      400: {
-        type: 'null'
-      },
-      500: {
-        type: 'null'
-      }
-    }
-  }
-};
+const { createSchema, listSchema, getSchema, qrSchema, updateSchema, deleteSchema } = require('./quiz-schema');
+const { cookieValidator } = require('../handlers/user-handlers');
 
 module.exports = (fastify, opts, done) => {
-  fastify.post('/quiz', multiObjRes, QuizHandler.createQuizHandler);
-  fastify.patch('/quiz/:threeWords', multiObjRes, QuizHandler.updateQuizHandler);
-  fastify.get('/quiz/:threeWords/_qr', strRes, QuizHandler.getQRcodeHandler);
-  fastify.get('/quiz/:threeWords', QuizHandler.getQuizHandler);
-  fastify.get('/quiz', multiObjRes, QuizHandler.listQuizHandler);
+  fastify.route({
+    url: '/quiz',
+    method: 'POST',
+    schema: createSchema,
+    preHandler: cookieValidator,
+    handler: QuizHandler.createQuizHandler
+  });
+  fastify.route({
+    url: '/quiz',
+    method: 'GET',
+    schema: listSchema,
+    handler: QuizHandler.listQuizHandler
+  });
+  fastify.route({
+    url: '/quiz/:threeWords',
+    method: 'GET',
+    schema: getSchema,
+    handler: QuizHandler.getQuizHandler
+  });
+  fastify.route({
+    url: '/quiz/:threeWords',
+    method: 'PATCH',
+    schema: updateSchema,
+    preHandler: cookieValidator,
+    handler: QuizHandler.updateQuizHandler
+  });
+  fastify.route({
+    url: '/quiz/:threeWords',
+    method: 'DELETE',
+    schema: deleteSchema,
+    preHandler: cookieValidator,
+    handler: QuizHandler.deleteQuizHandler
+  });
+  fastify.route({
+    url: '/quiz/:threeWords/_qr',
+    method: 'GET',
+    schema: qrSchema,
+    handler: QuizHandler.getQRcodeHandler
+  });
+  fastify.route({
+    url: '/quiz/:threeWords/_collate',
+    method: 'GET',
+    handler: QuizHandler.collateQuizHandler
+  });
+  fastify.route({
+    url: '/quiz/:threeWords/_evaluate',
+    method: [
+      "GET",
+      "POST",
+      "PUT"
+    ],
+    handler: QuizHandler.evaluateQuizHandler
+  });
   done();
 };

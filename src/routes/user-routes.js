@@ -25,15 +25,15 @@ module.exports = (fastify, opts, done) => {
   fastify.route({
     url: '/user:username',
     method: 'PATCH',
-    preHandler: UserHandler.userCookieValidator,
     schema: updateSchema,
+    preHandler: UserHandler.cookieValidator,
     handler: UserHandler.updateUserHandler
   });
   fastify.route({
     url: '/user/:username',
     method: 'DELETE',
-    preHandler: UserHandler.userCookieValidator,
     schema: deleteSchema,
+    preHandler: UserHandler.cookieValidator,
     handler: UserHandler.deleteUserHandler
   });
   fastify.route({

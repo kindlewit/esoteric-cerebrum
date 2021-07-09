@@ -1,45 +1,45 @@
-"use strict";
+'use strict';
 
-const QuestionHandler = require('../handlers/question-handlers');
-const { createSchema, listSchema, cacheSchema, updateSchema, deleteSchema, getSchema } = require('./question-schema');
+const ResponseHandler = require('../handlers/response-handlers');
+const { createSchema, listSchema, getSchema, cacheSchema, updateSchema, deleteSchema } = require('./response-schema');
 const { cookieValidator } = require('../handlers/user-handlers');
 
 module.exports = (fastify, opts, done) => {
   fastify.route({
-    url: '/question',
+    url: '/response',
     method: 'POST',
     schema: createSchema,
     preHandler: cookieValidator,
-    handler: QuestionHandler.createQuestionHandler
+    handler: ResponseHandler.createResponseHandler
   });
   fastify.route({
-    url: '/question',
+    url: '/response',
     method: 'GET',
     schema: listSchema,
-    handler: QuestionHandler.listQuestionHandler
+    handler: ResponseHandler.listResponseHandler
   });
   fastify.route({
-    url: '/question',
+    url: '/response',
     method: 'PUT',
     schema: getSchema,
-    handler: QuestionHandler.getQuestionHandler
+    handler: ResponseHandler.getResponseHandler
   });
   fastify.route({
-    url: '/question',
+    url: '/response',
     method: 'PATCH',
     schema: updateSchema,
     preHandler: cookieValidator,
-    handler: QuestionHandler.updateQuestionHandler
+    handler: ResponseHandler.updateResponseHandler
   });
   fastify.route({
-    url: '/question',
+    url: '/response',
     method: 'DELETE',
     schema: deleteSchema,
     preHandler: cookieValidator,
-    handler: QuestionHandler.deleteQuestionHandler
+    handler: ResponseHandler.deleteResponseHandler
   });
   fastify.route({
-    url: '/question/_cache',
+    url: '/response/_cache',
     method: [
       "POST",
       "PUT",
@@ -47,7 +47,7 @@ module.exports = (fastify, opts, done) => {
     ],
     schema: cacheSchema,
     preHandler: cookieValidator,
-    handler: QuestionHandler.cacheQuestionHandler
+    handler: ResponseHandler.cacheResponseHandler
   });
   done();
 };

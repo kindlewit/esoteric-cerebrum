@@ -13,11 +13,7 @@ module.exports = (sequelize, Sequelize) => {
         primaryKey: true,
         allowNull: false
       },
-      text: {
-        type: Sequelize.TEXT,
-        required: true,
-        allowNull: false
-      },
+      text: Sequelize.TEXT,
       file: Sequelize.STRING,
       weightage: {
         type: Sequelize.FLOAT,
@@ -29,7 +25,6 @@ module.exports = (sequelize, Sequelize) => {
         values: [
           "text",
           "mcq",
-          // Upload answer as file
           "multi"
         ],
         allowNull: false,

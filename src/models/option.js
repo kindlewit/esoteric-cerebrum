@@ -19,8 +19,7 @@ module.exports = (sequelize, Sequelize) => {
         primaryKey: true,
         allowNull: false
       },
-      text: Sequelize.TEXT,
-      file: Sequelize.STRING
+      text: Sequelize.TEXT
     },
     {
       underscored: true,

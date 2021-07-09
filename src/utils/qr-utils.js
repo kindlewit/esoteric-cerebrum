@@ -1,11 +1,14 @@
 "use strict";
 
 const _ = require('lodash');
-
 const { QR_URL, BASE_URL, DEFAULT_QR_OPTS } = require('../../config');
 
-function generateQuizQRCode(threeWords, opts = DEFAULT_QR_OPTS) {
-  return QR_URL + `/?data=${BASE_URL}/${threeWords}` + _.chain(opts).map((v, k) => encodeURI(`&${k}=${v}`)).join('').value();
+function generateQuizQRCode(threeWords, opts = null) {
+  if (_.isNil(opts) || _.isEmpty(opts)) {
+    opts = DEFAULT_QR_OPTS;
+  }
+  let encodedOpts = _.chain(opts).map((v, k) => encodeURIComponent(`&${k}=${v}`)).join('').value();
+  return `${QR_URL}/?data=${BASE_URL}/${threeWords}${encodedOpts}`;
 }
 
 module.exports = {

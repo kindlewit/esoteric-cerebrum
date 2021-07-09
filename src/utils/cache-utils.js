@@ -16,68 +16,60 @@ const getKey = promisify(client.get).bind(client);
 const deleteKey = promisify(client.del).bind(client);
 const getAllKeys = promisify(client.keys).bind(client);
 
-
-// User cache fns
-async function setLoginCache(username, data) {
-  let key = `UserLoginCache_${username}`;
+// Question cache fns
+async function setQuestionCache(threeWords, data) {
+  threeWords = threeWords.split('-').join('');
+  let key = `QuestionCache:${threeWords}`;
   await setKey(key, JSON.stringify(data));
   return key;
 }
 
-async function getLoginCache(usernameOrKey) {
-  if (usernameOrKey.includes('UserLoginCache_')) {
-    // Get by Key
-    return JSON.parse(await getKey(usernameOrKey));
-  } else {
-    // Get by username
-    let key = `UserLoginCache_${usernameOrKey}`;
-    return JSON.parse(await getKey(key));
-  }
+async function getQuestionCache(threeWords) {
+  threeWords = threeWords.split('-').join('');
+  let key = `QuestionCache:${threeWords}`;
+  return JSON.parse(await getKey(key));
 }
 
-async function deleteLoginCache(usernameOrKey) {
-  if (usernameOrKey.includes('UserLoginCache_')) {
-    // Delete by Key
-    return JSON.parse(await getKey(usernameOrKey));
-  } else {
-    // Delete by username
-    let key = `UserLoginCache_${usernameOrKey}`;
-    return await deleteKey(key);
-  }
-}
-
-async function isValid(key) {
-  let data = JSON.parse(await getKey(key));
-  if (data.expiry_timestamp && data.expiry_timestamp > new Date().getTime()) {
-    return true;
-  }
-  return false;
+async function deleteQuestionCache(threeWords) {
+  threeWords = threeWords.split('-').join('');
+  let key = `QuestionCache:${threeWords}`;
+  await deleteKey(key);
+  return true;
 }
 
 // Response cache fns
 async function setResponseCache(threeWords, username, data) {
   threeWords = threeWords.split('-').join('');
-  let key = `ResponseCache_${threeWords}_${username}`;
+  let key = `ResponseCache:${threeWords}:${username}`;
   await setKey(key, JSON.stringify(data));
   return key;
 }
 
 async function getResponseCache(threeWords, username) {
   threeWords = threeWords.split('-').join('');
-  let key = `ResponseCache_${threeWords}_${username}`;
+  let key = `ResponseCache:${threeWords}:${username}`;
   return JSON.parse(await getKey(key));
 }
 
 async function deleteResponseCache(threeWords, username = null) {
   threeWords = threeWords.split('-').join('');
-  let key = username ? `ResponseCache_${threeWords}_${username}` : `ResponseCache_${threeWords}_*`;
+  let key = username ? `ResponseCache:${threeWords}:${username}` : `ResponseCache_${threeWords}_*`;
   return await deleteKey(key);
 }
 
+// Common fns
+async function isValid(key) {
+  let data = JSON.parse(await getKey(key));
+  if (data && data.expiry_timestamp && data.expiry_timestamp > new Date().getTime()) {
+    return true;
+  }
+  return false;
+}
+
 module.exports = {
-  setLoginCache,
-  getLoginCache,
-  deleteLoginCache,
+  setQuestionCache,
+  getQuestionCache,
+  deleteQuestionCache,
   setResponseCache,
   getResponseCache,
   deleteResponseCache,

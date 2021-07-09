@@ -2,207 +2,180 @@
 
 const _ = require('lodash');
 const Response = require('../services/response-services');
-const cacheUtils = require('../utils/cache-utils');
+const { setResponseCache, getResponseCache, deleteResponseCache } = require('../utils/cache-utils');
+const { verifyUserAuthority } = require('../utils/user-utils');
 
-function createResponseHandler(request, reply) {
+async function createResponseHandler(request, reply) {
   if (
     _.isNil(request.body) ||
     _.isNil(request.body.three_words) ||
-    _.isNil(request.body.username)
+    _.isNil(request.body.responses) ||
+    !_.isArray(request.body.responses) ||
+    _.isEmpty(request.body.responses)
   ) {
-    reply.code(400).send();
+    return reply.code(400).send();
   }
-  if (_.has(request.query, 'multiple') && request.query.multiple.toLowerCase() === 'true') {
+  try {
     // Insert Multiple Responses
-    if (
-      _.isNil(request.body.responses) ||
-      !_.isArray(request.body.responses) ||
-      _.isEmpty(request.body.responses)
-    ) {
-      reply.code(400).send();
-    }
+    let { three_words } = request.body;
+    let { username } = request.session;
     let responses = _.chain(request.body.responses)
       .map(res => {
-        return {
-          ...res,
-          three_words: request.body.three_words,
-          username: request.body.username
-        };
+        return { ...res, three_words, username };
       })
-      .filter(res => _.has(res, 'number'))
+      .filter(res => _.has(res, 'number') && _.has(res, 'three_words') && _.has(res, 'username'))
       .value();
-    Promise.all(responses.map(Response.create))
-      .then(() => {
-        reply.code(201).send({ total_docs: responses.length, docs: responses });
-      })
-      .catch(e => {
-        request.log.error(e);
-        reply.code(500).send();
-      });
-  } else {
-    // Insert One Response
-    if (_.isNil(request.body.number)) {
-      reply.code(400).send();
-    }
-    Response.create(request.body)
-      .then(doc => {
-        reply.code(201).send(doc);
-      })
-      .catch(e => {
-        request.log.error(e);
-        reply.code(500).send();
-      });
-  }
-}
 
-function cacheResponseHandler(request, reply) {
-  if (_.isNil(request.body) || _.isNil(request.body.username) || _.isNil(request.body.three_words)) {
-    reply.code(400).send();
-  }
-  if (request.method === 'POST') {
-    // Create cache data
-    if (_.isNil(request.body.responses) || _.isEmpty(request.body.responses)) {
-      reply.code(400).send();
-    }
-    cacheUtils.setResponseCache(request.body.three_words, request.body.username, request.body.responses)
-      .then(() => {
-        reply.code(201).send();
-      }).catch(e => {
-        request.log.error(e);
-        reply.code(500).send();
-      });
-  } else {
-    // Return cache data
-    cacheUtils.getResponseCache(request.body.three_words, request.body.username)
-      .then(data => {
-        if (_.isNil(data) || _.isEmpty(data)) {
-          reply.code(404).send();
-        } else {
-          let result = {
-            three_words: request.body.three_words,
-            username: request.body.username,
-            total_docs: JSON.parse(data).length,
-            responses: JSON.parse(data)
-          };
-          reply.code(200).send(result);
-        }
-      }).catch(e => {
-        request.log.error(e);
-        reply.code(500).send();
-      });
+    let docs = await Response.bulkCreate(responses);
+    deleteResponseCache(three_words, username);
+    return reply.code(201).send({ total_docs: docs.length, three_words, username, responses: docs });
+  } catch (e) {
+    request.log.error(e);
+    return reply.code(500).send();
   }
 }
 
 function listResponseHandler(request, reply) {
-  if (_.has(request.query, 'count') && request.query.count.toLowerCase() === 'true') {
+  if (_.has(request.query, 'count') && request.query.count) {
     Response.count()
       .then(count => {
-        reply.code(200).send({ total_docs: count });
+        return reply.code(200).send({ total_docs: count });
       })
       .catch(e => {
         request.log.error(e);
-        reply.code(500).send();
+        return reply.code(500).send();
       });
   } else {
     let limit = _.has(request.query, 'limit') ? parseInt(request.query.limit) : null;
     let offset = _.has(request.query, 'offset') ? parseInt(request.query.offset) : null;
     Response.list(limit, offset)
       .then(docs => {
-        reply.code(200).send({ total_docs: docs.length, docs });
+        return reply.code(200).send({ total_docs: docs.length, docs });
       })
       .catch(e => {
         request.log.error(e);
-        reply.code(500).send();
+        return reply.code(500).send();
       });
   }
 }
 
-function getResponseHandler(request, reply) {
-  if (
-    _.isNil(request.body) ||
-    (
-      _.isNil(request.body.three_words) &&
-      _.isNil(request.body.username)
-      && _.isNil(request.body.number)
-    )
-  ) {
+async function getResponseHandler(request, reply) {
+  if (_.isNil(request.body) || _.isEmpty(request.body)) {
     reply.code(400).send();
   }
-  if (request.body.three_words && request.body.username && _.isFinite(request.body.number)) {
-    // All 3 parameters mentioned: get query
-    Response.get(request.body.three_words, request.body.username, request.body.number)
-      .then(doc => {
-        if (_.isEmpty(doc)) {
-          reply.code(404).send();
-        }
-        reply.code(200).send(doc);
-      })
-      .catch(e => {
-        request.log.error(e);
-        reply.code(500).send();
-      });
-  } else {
-    // Partial parameters: find query
-    Response.findByQuery(request.body)
-      .then(docs => {
-        if (_.isEmpty(docs)) {
-          reply.code(404).send();
-        }
-        reply.code(200).send({ total_docs: docs.length, docs });
-      })
-      .catch(e => {
-        request.log.error(e);
-        reply.code(500).send();
-      });
+  try {
+    if (request.body.three_words && request.body.username && _.isFinite(request.body.number)) {
+      // All 3 parameters mentioned: get query
+      let { three_words, username, number } = request.body;
+      let doc = await Response.get(three_words, username, number);
+      if (_.isEmpty(doc)) {
+        return reply.code(404).send();
+      }
+      return reply.code(200).send(doc);
+    } else {
+      // Partial parameters: find query
+      let docs = await Response.findByQuery(request.body);
+      if (_.isEmpty(docs)) {
+        return reply.code(404).send();
+      }
+      return reply.code(200).send({ total_docs: docs.length, docs });
+    }
+  } catch (e) {
+    request.log.error(e);
+    return reply.code(500).send();
   }
 }
 
-function updateResponseHandler(request, reply) {
+async function updateResponseHandler(request, reply) {
   if (
     _.isNil(request.body) ||
-    _.isEmpty(request.body) ||
-    _.isNil(request.body.three_words) ||
-    _.isNil(request.body.username) ||
-    _.isNil(request.body.number) ||
-    _.isNil(request.body.changes)
-  ) {
-    reply.code(400).send();
-  }
-  Response.update(request.body.three_words, request.body.username, request.body.number, request.body.changes)
-    .then(doc => {
-      reply.code(200).send(doc);
-    })
-    .catch(e => {
-      request.log.error(e);
-      reply.code(500).send();
-    });
-}
-
-function deleteResponseHandler(request, reply) {
-  if (
-    _.isNil(request.body) ||
-    _.isEmpty(request.body) ||
     _.isNil(request.body.three_words) ||
     _.isNil(request.body.username) ||
     _.isNil(request.body.number)
   ) {
     reply.code(400).send();
   }
-  Response.remove(request.body.three_words, request.body.username, request.body.number)
-    .then(() => {
-      reply.code(200).send();
-    })
-    .catch(e => {
-      request.log.error(e);
-      reply.code(500).send();
-    });
+  try {
+    let { three_words, username, number } = request.body;
+    let data = await Response.get(three_words, username, number);
+    if (_.isEmpty(data)) {
+      return reply.code(404).send();
+    }
+    if (verifyUserAuthority(data, username)) {
+      let changes = _.omit(request.body, ["three_words", "username", "number"]); // Cannot edit these 3 attributes
+      let doc = await Response.update(three_words, username, number, changes);
+      if (_.isEmpty(doc)) {
+        return reply.code(404).send();
+      }
+      return reply.code(200).send(doc);
+    } else {
+      return reply.code(403).send();
+    }
+  } catch (e) {
+    request.log.error(e);
+    return reply.code(500).send();
+  }
+}
+
+async function deleteResponseHandler(request, reply) {
+  if (
+    _.isNil(request.body) ||
+    _.isNil(request.body.three_words) ||
+    _.isNil(request.body.username) ||
+    _.isNil(request.body.number)
+  ) {
+    return reply.code(400).send();
+  }
+  try {
+    let { three_words, username, number } = request.body;
+    let data = await Response.get(three_words, username, number);
+    if (_.isEmpty(data)) {
+      return reply.code(404).send();
+    }
+    if (verifyUserAuthority(data, username)) {
+      await Response.remove(three_words, username, number);
+      return reply.code(204).send();
+    } else {
+      return reply.code(403).send();
+    }
+  } catch (e) {
+    request.log.error(e);
+    return reply.code(500).send();
+  }
+}
+
+async function cacheResponseHandler(request, reply) {
+  try {
+    if (request.method === 'POST') {
+      // Create cache data
+      if (_.isNil(request.body.responses)) {
+        return reply.code(400).send();
+      }
+      let { three_words, username, responses } = request.body;
+      let data = {
+        timestamp: _.now(),
+        responses: responses
+      };
+      await setResponseCache(three_words, username, data);
+      return reply.code(204).send();
+    } else {
+      // Return cache data
+      let { three_words, username } = request.body;
+      let data = await getResponseCache(three_words, username);
+      return reply.code(200).send({ three_words, username, responses: data.responses });
+    }
+  }
+  catch (e) {
+    request.log.error(e);
+    return reply.code(500).send();
+  }
 }
 
 module.exports = {
   createResponseHandler,
   listResponseHandler,
   getResponseHandler,
-  cacheResponseHandler,
   updateResponseHandler,
-  deleteResponseHandler
+  deleteResponseHandler,
+  cacheResponseHandler,
 };

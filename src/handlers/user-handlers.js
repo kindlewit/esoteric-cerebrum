@@ -1,44 +1,50 @@
 "use strict";
 
 const _ = require('lodash');
-const User = require('../services/user-services');
-const cacheUtils = require('../utils/cache-utils');
+const bcrypt = require('bcryptjs');
 
-async function userCookieValidator(request, reply, next) {
-  let cookie = request.unsignCookie(request.cookies.session);
-  if (_.has(cookie, 'value') && !_.isEmpty(cookie.value) && cookie.valid) {
-    // Cookie is valid
-    let session = Buffer.from(cookie.value, 'base64url').toString('ascii');
-    if (await cacheUtils.isValid(session)) {
-      // Session key is valid. User verified.
-      return next();
+const { SALT_LENGTH } = require('../../config');
+const User = require('../services/user-services');
+
+function cookieValidator(request, reply, next) {
+  /**
+   * PreHandler function to validate user cookie
+   */
+  let session = request.session;
+  let username = request?.body?.username ?? request?.params?.username ?? null;
+  if (session.username) {
+    // Cookie has been authenticated
+    if (username && session.username !== username) {
+      return reply.code(403).send(); // User not authroized to make this request
     }
+    return next();
   }
   return reply.code(401).send();
 }
 
-function signupUserHandler(request, reply) {
+async function signupUserHandler(request, reply) {
   if (
     _.isNil(request.body) ||
-    !_.isObject(request.body) ||
+    _.isEmpty(request.body) ||
     _.isNil(request.body.username) ||
     _.isNil(request.body.password) ||
     _.isNil(request.body.email)
   ) {
-    reply.code(400).send();
+    return reply.code(400).send();
   }
-  User.create(request.body)
-    .then(doc => {
-      reply.code(201).send(doc);
-    })
-    .catch(e => {
-      request.log.error(e);
-      reply.code(500).send();
-    });
+  try {
+    let signupObj = request.body;
+    signupObj.password = await bcrypt.hash(signupObj.password, SALT_LENGTH);
+    let doc = await User.create(signupObj);
+    return reply.code(201).send(doc);
+  } catch (e) {
+    request.log.error(e);
+    return reply.code(500).send();
+  }
 }
 
 function listUserHandler(request, reply) {
-  if (_.has(request.query, 'count') && request.query.count.toLowerCase() === 'true') {
+  if (_.has(request.query, 'count') && request.query.count) {
     User.count()
       .then(count => {
         return reply.code(200).send({ total_docs: count });
@@ -61,6 +67,85 @@ function listUserHandler(request, reply) {
   }
 }
 
+function getUserHandler(request, reply) {
+  if (_.isNil(request.params.username)) {
+    return reply.code(400).send();
+  }
+  if (_.has(request.query, 'linked')) {
+    User.getLinked(request.params.username, request.query.linked.split(','))
+      .then(doc => {
+        if (_.isEmpty(doc)) {
+          return reply.code(404).send();
+        }
+        return reply.code(200).send(doc);
+      })
+      .catch(e => {
+        request.log.error(e);
+        return reply.code(500).send();
+      });
+  } else {
+    User.get(request.params.username)
+      .then(doc => {
+        if (_.isEmpty(doc)) {
+          return reply.code(404).send();
+        }
+        return reply.code(200).send(doc);
+      })
+      .catch(e => {
+        request.log.error(e);
+        return reply.code(500).send();
+      });
+  }
+}
+
+function updateUserHandler(request, reply) {
+  /**
+   * Cookie verification in pre-handler
+   */
+  if (_.isNil(request.params.username) || _.isNil(request.body)) {
+    return reply.code(400).send();
+  }
+  User.update(request.params.username, request.body)
+    .then(doc => {
+      if (_.isEmpty(doc)) {
+        return reply.code(404).send();
+      }
+      return reply.code(200).send(doc);
+    })
+    .catch(e => {
+      request.log.error(e);
+      return reply.code(500).send();
+    });
+}
+
+function deleteUserHandler(request, reply) {
+  /**
+    * Cookie verification in pre-handler
+    */
+  if (_.isNil(request.params.username)) {
+    return reply.code(400).send();
+  }
+  if (_.has(request.query, 'purge') && request.query.purge) {
+    User.purge(request.params.username)
+      .then(() => {
+        return reply.code(204).send();
+      })
+      .catch(e => {
+        request.log.error(e);
+        return reply.code(500).send();
+      });
+  } else {
+    User.remove(request.params.username)
+      .then(() => {
+        return reply.code(204).send();
+      })
+      .catch(e => {
+        request.log.error(e);
+        return reply.code(500).send();
+      });
+  }
+}
+
 function listUsernamesHandler(request, reply) {
   User.listNames()
     .then(docs => {
@@ -73,37 +158,6 @@ function listUsernamesHandler(request, reply) {
       request.log.error(e);
       reply.code(500).send();
     });
-}
-
-function getUserHandler(request, reply) {
-  if (_.isNil(request.params.username)) {
-    reply.code(400).send();
-  }
-  if (_.has(request.query, 'linked')) {
-    User.getLinked(request.params.username, request.query.linked.split(','))
-      .then(doc => {
-        if (_.isEmpty(doc)) {
-          reply.code(404).send();
-        }
-        reply.code(200).send(doc);
-      })
-      .catch(e => {
-        request.log.error(e);
-        reply.code(500).send();
-      });
-  } else {
-    User.get(request.params.username)
-      .then(doc => {
-        if (_.isEmpty(doc)) {
-          reply.code(404).send();
-        }
-        reply.code(200).send(doc);
-      })
-      .catch(e => {
-        request.log.error(e);
-        reply.code(500).send();
-      });
-  }
 }
 
 async function loginUserHandler(request, reply) {
@@ -119,82 +173,26 @@ async function loginUserHandler(request, reply) {
     if (_.isEmpty(doc)) {
       return reply.code(404).send();
     }
-    if (request.body.password === doc.password) {
+    if (await bcrypt.compareSync(request.body.password, doc.password)) {
       // Create login cache
-      let cacheData = {
-        username: request.params.username,
-        login_timestamp: new Date().getTime(),
-        expiry_timestamp: new Date().getTime() + 7200000 // +2 hours
-      };
-      let key = await cacheUtils.setLoginCache(request.params.username, cacheData);
-      let session = Buffer.from(key).toString('base64url');
-      reply.setCookie('session', session, { secure: false, path: '/', signed: true })
-        .code(200)
-        .send();
-    } else {
-      return reply.code(401).send();
+      request.session.username = doc.username;
+      return reply.code(200).send();
     }
+    return reply.code(401).send();
   } catch (e) {
     request.log.error(e);
     return reply.code(500).send();
   }
 }
 
-function updateUserHandler(request, reply) {
-  /**
-   * Cookie verification in pre-handler
-   */
-  if (_.isNil(request.params.username) || _.isNil(request.body)) {
-    reply.code(400).send();
-  }
-  User.update(request.params.username, request.body)
-    .then(doc => {
-      if (_.isEmpty(doc)) {
-        reply.code(404).send();
-      }
-      reply.code(200).send(doc);
-    })
-    .catch(e => {
-      request.log.error(e);
-      reply.code(500).send();
-    });
-}
-
-function deleteUserHandler(request, reply) {
-  /**
-    * Cookie verification in pre-handler
-    */
-  if (_.isNil(request.params.username)) {
-    reply.code(400).send();
-  }
-  if (_.has(request.query, 'purge') && request.query.purge.toLowerCase() === 'true') {
-    User.purge(request.params.username)
-      .then(() => {
-        reply.code(200).send();
-      })
-      .catch(e => {
-        request.log.error(e);
-        reply.code(500).send();
-      });
-  } else {
-    User.remove(request.params.username)
-      .then(() => {
-        reply.code(204).send();
-      })
-      .catch(e => {
-        request.log.error(e);
-        reply.code(500).send();
-      });
-  }
-}
 
 module.exports = {
-  userCookieValidator,
+  cookieValidator,
   signupUserHandler,
   listUserHandler,
-  listUsernamesHandler,
   getUserHandler,
-  loginUserHandler,
   updateUserHandler,
-  deleteUserHandler
+  deleteUserHandler,
+  listUsernamesHandler,
+  loginUserHandler,
 };

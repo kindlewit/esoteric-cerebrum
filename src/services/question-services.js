@@ -22,10 +22,31 @@ function sanitize(doc) {
   }
   return cleanObj;
 }
-async function create(doc) {
-  doc = sanitize(doc);
-  await db.question.create(doc);
-  return doc;
+
+function create(doc) {
+  return new Promise((resolve, reject) => {
+    doc = sanitize(doc);
+    db.question.create(doc)
+      .then(() => db.question.findOne({
+        where: {
+          three_words: doc.three_words,
+          number: doc.number
+        },
+        raw: true,
+        returning: true
+      }))
+      .then(doc => resolve(doc))
+      .catch(e => reject(e));
+  });
+}
+
+function bulkCreate(docs) {
+  return new Promise((resolve, reject) => {
+    docs = docs.map(sanitize);
+    db.question.bulkCreate(docs, { returning: true, raw: true })
+      .then(docs => resolve(docs))
+      .catch(e => reject(e));
+  });
 }
 
 function list(limit = null, offset = null) {
@@ -47,20 +68,20 @@ function count() {
   return db.question.count();
 }
 
+function find(query) {
+  return db.question.findAll({ ...query, raw: true });
+}
+
 function get(threeWords, qNum) {
   if (_.isNil(threeWords) || _.isNil(qNum)) {
     throw Error("Missing parameters");
   }
-  return new Promise((resolve, reject) => {
-    db.question.findOne({
-      where: {
-        three_words: threeWords,
-        number: qNum
-      },
-      raw: true
-    })
-      .then(doc => resolve(_.cloneDeep(doc)))
-      .catch(e => reject(e));
+  return db.question.findOne({
+    where: {
+      three_words: threeWords,
+      number: qNum
+    },
+    raw: true
   });
 }
 
@@ -80,20 +101,18 @@ async function getLinked(threeWords, qNum, list) {
     return {};
   }
   let result = { ...questionDoc };
+  query.attributes = { exclude: ['three_words', 'number'] };
   if (_.includes(list, "responses")) {
-    query.attributes = { exclude: ['three_words', 'number'] };
-    let docs = await db.response.findAll(query);
-    result.responses = !_.isNil(docs) ? _.cloneDeep(docs) : [];
+    result.responses = await db.response.findAll(query) ?? [];
+    result.total_responses = result.responses.length;
   }
   if (_.includes(list, "options")) {
-    query.attributes = { exclude: ['three_words', 'number'] };
-    let docs = await db.option.findAll(query);
-    result.options = !_.isNil(docs) ? _.cloneDeep(docs) : [];
+    result.options = await db.option.findAll(query) ?? [];
+    result.total_options = result.options.length;
   }
   if (_.includes(list, "answers")) {
-    query.attributes = { exclude: ['three_words', 'number'] };
-    let docs = await db.answer.findAll(query);
-    result.answers = !_.isNil(docs) ? _.cloneDeep(docs) : [];
+    result.answers = await db.answer.findAll(query) ?? [];
+    result.total_answers = result.answers.length;
   }
   return result;
 }
@@ -207,8 +226,10 @@ function purge(threeWords, qNum) {
 
 module.exports = {
   create,
+  bulkCreate,
   list,
   count,
+  find,
   get,
   getLinked,
   update,

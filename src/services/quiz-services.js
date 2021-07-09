@@ -3,23 +3,7 @@
 const _ = require('lodash');
 const db = require('../orm');
 const generateThreeWords = require('../utils/word-gen').generateThreeWords;
-
-function sanitize(doc) {
-  let cleanObj = _.cloneDeep(doc);
-  for (let key in doc) {
-    if (_.isNil(doc[key]) || key === "created_at" || key === "three_words") {
-      // Cannot insert user-defined created_at / three_words nor can it be altered
-      _.omit(cleanObj, key);
-    }
-  }
-  if (!_.isNil(doc.duration) && _.isString(doc.duration)) {
-    cleanObj.duration = parseInt(doc.duration);
-  }
-  if (!_.isNil(doc.topics) && _.isString(doc.topics)) {
-    cleanObj.topics = doc.topics.split(',');
-  }
-  return cleanObj;
-}
+const { sanitize } = require('../utils/quiz-utils');
 
 async function create(doc) {
   doc = sanitize(doc);
@@ -29,17 +13,13 @@ async function create(doc) {
 }
 
 function list(limit = null, offset = null) {
-  return new Promise((resolve, reject) => {
-    db.quiz.findAll({
-      offset: offset,
-      limit: limit,
-      order: [
-        ['created_at', 'DESC']
-      ],
-      raw: true
-    })
-      .then(docs => resolve(_.cloneDeep(docs)))
-      .catch(e => reject(e));
+  return db.quiz.findAll({
+    offset: offset,
+    limit: limit,
+    order: [
+      ["created_at", "DESC"]
+    ],
+    raw: true
   });
 }
 
@@ -47,15 +27,16 @@ function count() {
   return db.quiz.count();
 }
 
+function find(query) {
+  query.raw = true;
+  return db.quiz.findAll(query);
+}
+
 function get(threeWords) {
   if (_.isNil(threeWords)) {
     throw Error("Missing parameters");
   }
-  return new Promise((resolve, reject) => {
-    db.quiz.findByPk(threeWords, { raw: true })
-      .then(docs => resolve(_.cloneDeep(docs)))
-      .catch(e => reject(e));
-  });
+  return db.quiz.findByPk(threeWords, { raw: true });
 }
 
 async function getLinked(threeWords, list) {
@@ -72,21 +53,21 @@ async function getLinked(threeWords, list) {
       three_words: threeWords
     },
     attributes: {
-      exclude: ['three_words']
+      exclude: ["three_words"]
     },
     raw: true
   };
   if (_.includes(list, "questions")) {
-    let docs = await db.question.findAll(query);
-    result.questions = !_.isNil(docs) ? _.cloneDeep(docs) : [];
+    result.questions = await db.question.findAll(query) ?? [];
+    result.total_questions = result.questions.length;
   }
   if (_.includes(list, "responses")) {
-    let docs = await db.response.findAll(query);
-    result.responses = !_.isNil(docs) ? _.cloneDeep(docs) : [];
+    result.responses = await db.response.findAll(query) ?? [];
+    result.total_responses = result.responses.length;
   }
   if (_.includes(list, "answers")) {
-    let docs = await db.answer.findAll(query);
-    result.answers = !_.isNil(docs) ? _.cloneDeep(docs) : [];
+    result.answers = await db.answer.findAll(query) ?? [];
+    result.total_answers = result.answers.length;
   }
   return result;
 }
@@ -103,7 +84,7 @@ function update(threeWords, changes) {
       }
     })
       .then(() => db.quiz.findByPk(threeWords, { raw: true }))
-      .then(doc => resolve(_.cloneDeep(doc)))
+      .then(doc => resolve(doc))
       .catch(e => reject(e));
   });
 }
@@ -112,14 +93,10 @@ function remove(threeWords) {
   if (_.isNil(threeWords)) {
     throw Error("Missing parameters");
   }
-  return new Promise((resolve, reject) => {
-    db.quiz.destroy({
-      where: {
-        three_words: threeWords
-      }
-    })
-      .then(() => resolve(true))
-      .catch(e => reject(e));
+  return db.quiz.destroy({
+    where: {
+      three_words: threeWords
+    }
   });
 }
 
@@ -127,14 +104,10 @@ function removeQuestions(threeWords) {
   if (_.isNil(threeWords)) {
     throw Error("Missing parameters");
   }
-  return new Promise((resolve, reject) => {
-    db.question.destroy({
-      where: {
-        three_words: threeWords
-      }
-    })
-      .then(() => resolve(true))
-      .catch(e => reject(e));
+  return db.question.destroy({
+    where: {
+      three_words: threeWords
+    }
   });
 }
 
@@ -142,14 +115,10 @@ function removeResponses(threeWords) {
   if (_.isNil(threeWords)) {
     throw Error("Missing parameters");
   }
-  return new Promise((resolve, reject) => {
-    db.response.destroy({
-      where: {
-        three_words: threeWords
-      }
-    })
-      .then(() => resolve(true))
-      .catch(e => reject(e));
+  return db.response.destroy({
+    where: {
+      three_words: threeWords
+    }
   });
 }
 
@@ -157,14 +126,10 @@ function removeOptions(threeWords) {
   if (_.isNil(threeWords)) {
     throw Error("Missing parameters");
   }
-  return new Promise((resolve, reject) => {
-    db.option.destroy({
-      where: {
-        three_words: threeWords
-      }
-    })
-      .then(() => resolve(true))
-      .catch(e => reject(e));
+  return db.option.destroy({
+    where: {
+      three_words: threeWords
+    }
   });
 }
 
@@ -172,14 +137,10 @@ function removeAnswers(threeWords) {
   if (_.isNil(threeWords)) {
     throw Error("Missing parameters");
   }
-  return new Promise((resolve, reject) => {
-    db.answer.destroy({
-      where: {
-        three_words: threeWords
-      }
-    })
-      .then(() => resolve(true))
-      .catch(e => reject(e));
+  return db.answer.destroy({
+    where: {
+      three_words: threeWords
+    }
   });
 }
 
@@ -207,6 +168,7 @@ module.exports = {
   create,
   list,
   count,
+  find,
   get,
   getLinked,
   update,

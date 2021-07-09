@@ -2,50 +2,35 @@
 
 const _ = require('lodash');
 const db = require('../orm');
-
-function sanitize(doc) {
-  let cleanObj = _.cloneDeep(doc);
-  for (let key in doc) {
-    if (_.isNil(doc[key]) || key === "created_at") {
-      // Cannot insert user-defined created_at nor can it be altered
-      _.omit(cleanObj, key);
-    }
-  }
-  if (!_.isNil(doc.duration)) {
-    cleanObj.duration = parseInt(doc.duration);
-  }
-  if (!_.isNil(doc.attended) && _.isString(doc.attended)) {
-    cleanObj.attended = doc.attended.split(',');
-  }
-  return cleanObj;
-}
+const { sanitize } = require('../utils/user-utils');
 
 function create(doc) {
   return new Promise((resolve, reject) => {
     db.user.create(sanitize(doc))
-    .then(() => db.user.findByPk(doc.username))
-    .then(doc => resolve(doc))
-    .catch(e => reject(e));
+      .then(() => db.user.findByPk(doc.username, {
+        attributes: {
+          exclude: ["password"]
+        },
+        raw: true
+      }))
+      .then(doc => resolve(doc))
+      .catch(e => reject(e));
   });
 }
 
 function list(limit = null, offset = null) {
-  return new Promise((resolve, reject) => {
-    let query = {
-      offset: offset,
-      limit: limit,
-      order: [
-        ['created_at', 'DESC']
-      ],
-      attributes: {
-        exclude: ['password']
-      },
-      raw: true
-    };
-    db.user.findAll(query)
-      .then(docs => resolve(_.cloneDeep(docs)))
-      .catch(e => reject(e));
-  });
+  let query = {
+    offset: offset,
+    limit: limit,
+    order: [
+      ["created_at", "DESC"]
+    ],
+    attributes: {
+      exclude: ["password"]
+    },
+    raw: true
+  };
+  return db.user.findAll(query);
 }
 
 function count() {
@@ -57,7 +42,7 @@ function listNames() {
     db.user.findAll({
       raw: true,
       attributes: {
-        include: ['username']
+        include: ["username"]
       }
     })
       .then(docs => resolve(_.chain(docs).cloneDeep().map('username').value()))
@@ -69,57 +54,47 @@ function get(username, includePass = false) {
   if (_.isNil(username)) {
     throw Error("Missing parameters");
   }
-  return new Promise((resolve, reject) => {
-    let query = { raw: true };
-    if (!includePass) {
-      query.attributes = { exclude: ['password'] };
-    }
-    db.user.findByPk(username, query)
-      .then(docs => resolve(_.cloneDeep(docs)))
-      .catch(e => reject(e));
-  });
+  let query = includePass ? { raw: true } : { attributes: { exclude: ["password"] }, raw: true };
+  return db.user.findByPk(username, query);
 }
 
 async function getLinked(username, list) {
   if (_.isEmpty(list) || _.isNil(username)) {
     throw Error("Missing parameters");
   }
-  let userDoc = await db.user.findByPk(username, { raw: true, attributes: { exclude: ['password'] } });
+  let userDoc = await db.user.findByPk(username, {
+    raw: true,
+    attributes: {
+      exclude: ["password"]
+    }
+  });
   if (_.isEmpty(userDoc)) {
     return {};
   }
   let result = { ...userDoc };
+  let query = {
+    where: {
+      username: username
+    },
+    order: [
+      ["created_at", "DESC"]
+    ],
+    attributes: {
+      exclude: [
+        "username",
+        "url",
+        "file_upload"
+      ]
+    },
+    raw: true
+  };
   if (_.includes(list, "quizzes")) {
-    let query = {
-      where: {
-        username: username
-      },
-      order: [
-        ['created_at', 'DESC']
-      ],
-      attributes: {
-        exclude: ['username', 'url', 'file_upload']
-      },
-      raw: true
-    };
-    let docs = await db.quiz.findAll(query);
-    result.quizzes = !_.isEmpty(docs) ? _.cloneDeep(docs) : [];
+    result.quizzes = await db.quiz.findAll(query) ?? [];
+    result.total_quizzes = result.quizzes.length;
   }
   if (_.includes(list, "responses")) {
-    let query = {
-      where: {
-        username: username
-      },
-      order: [
-        ['created_at', 'DESC']
-      ],
-      attributes: {
-        exclude: ['username']
-      },
-      raw: true
-    };
-    let docs = await db.response.findAll(query);
-    result.responses = !_.isEmpty(docs) ? _.cloneDeep(docs) : [];
+    result.responses = await db.response.findAll(query) ?? [];
+    result.total_responses = result.responses.length;
   }
   return result;
 }
@@ -145,29 +120,17 @@ function remove(username) {
   if (_.isNil(username)) {
     throw Error("Missing parameters");
   }
-  return new Promise((resolve, reject) => {
-    db.user.destroy({
-      where: {
-        username: username
-      }
-    })
-      .then(() => resolve(true))
-      .catch(e => reject(e));
-  });
+  return db.user.destroy(username);
 }
 
 function removeResponses(username) {
   if (_.isNil(username)) {
     throw Error("Missing parameters");
   }
-  return new Promise((resolve, reject) => {
-    db.response.destroy({
-      where: {
-        username: username
-      }
-    })
-      .then(() => resolve(true))
-      .catch(e => reject(e));
+  return db.response.destroy({
+    where: {
+      username: username
+    }
   });
 }
 

@@ -20,10 +20,30 @@ function sanitize(doc) {
   return cleanObj;
 }
 
-async function create(doc) {
-  doc = sanitize(doc);
-  await db.response.create(doc);
-  return doc;
+function create(doc) {
+  return new Promise((resolve, reject) => {
+    doc = sanitize(doc);
+    db.response.create(doc)
+      .then(() => db.response.findOne({
+        where: {
+          three_words: doc.three_words,
+          number: doc.number,
+          username: doc.username
+        },
+        raw: true
+      }))
+      .then(doc => resolve(doc))
+      .catch(e => reject(e));
+  });
+}
+
+function bulkCreate(docs) {
+  return new Promise((resolve, reject) => {
+    docs = docs.map(sanitize);
+    db.response.bulkCreate(docs, { returning: true, raw: true })
+      .then(docs => resolve(docs))
+      .catch(e => reject(e));
+  });
 }
 
 function list(limit = null, offset = null) {
@@ -65,16 +85,12 @@ function get(threeWords, username, qNum) {
   });
 }
 
-function findByQuery(query) {
+function find(query) {
   if (_.isNil(query) || _.isEmpty(query)) {
     throw Error("Missing parameters");
   }
   query.raw = true;
-  return new Promise((resolve, reject) => {
-    db.response.findAll(query)
-      .then(docs => resolve(_.cloneDeep(docs)))
-      .catch(e => reject(e));
-  });
+  return db.response.findAll(query);
 }
 
 function update(threeWords, username, qNum, changes) {
@@ -110,10 +126,11 @@ function remove(threeWords, username, qNum) {
 
 module.exports = {
   create,
+  bulkCreate,
   list,
   count,
   get,
-  findByQuery,
+  find,
   update,
   remove
 };

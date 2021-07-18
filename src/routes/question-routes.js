@@ -1,7 +1,14 @@
-"use strict";
+'use strict';
 
 const QuestionHandler = require('../handlers/question-handlers');
-const { createSchema, listSchema, cacheSchema, updateSchema, deleteSchema, getSchema } = require('./question-schema');
+const {
+  createSchema,
+  listSchema,
+  cacheSchema,
+  updateSchema,
+  deleteSchema,
+  getSchema
+} = require('./question-schema');
 const { cookieValidator } = require('../handlers/user-handlers');
 
 module.exports = (fastify, opts, done) => {
@@ -41,9 +48,9 @@ module.exports = (fastify, opts, done) => {
   fastify.route({
     url: '/question/_cache',
     method: [
-      "POST",
-      "PUT",
-      "PATCH"
+      'POST',
+      'PUT',
+      'PATCH'
     ],
     schema: cacheSchema,
     preHandler: cookieValidator,

@@ -1,7 +1,14 @@
-"use strict";
+'use strict';
 
-const QuizHandler = require('../handlers/quiz-handlers');
-const { createSchema, listSchema, getSchema, qrSchema, updateSchema, deleteSchema } = require('./quiz-schema');
+const QuizControl = require('../handlers/quiz-handlers');
+const {
+  createSchema,
+  listSchema,
+  getSchema,
+  qrSchema,
+  updateSchema,
+  deleteSchema
+} = require('./quiz-schema');
 const { cookieValidator } = require('../handlers/user-handlers');
 
 module.exports = (fastify, opts, done) => {
@@ -10,53 +17,53 @@ module.exports = (fastify, opts, done) => {
     method: 'POST',
     schema: createSchema,
     preHandler: cookieValidator,
-    handler: QuizHandler.createQuizHandler
+    handler: QuizControl.createQuizHandler
   });
   fastify.route({
     url: '/quiz',
     method: 'GET',
     schema: listSchema,
-    handler: QuizHandler.listQuizHandler
+    handler: QuizControl.listQuizHandler
   });
   fastify.route({
     url: '/quiz/:threeWords',
     method: 'GET',
     schema: getSchema,
-    handler: QuizHandler.getQuizHandler
+    handler: QuizControl.getQuizHandler
   });
   fastify.route({
     url: '/quiz/:threeWords',
     method: 'PATCH',
     schema: updateSchema,
     preHandler: cookieValidator,
-    handler: QuizHandler.updateQuizHandler
+    handler: QuizControl.updateQuizHandler
   });
   fastify.route({
     url: '/quiz/:threeWords',
     method: 'DELETE',
     schema: deleteSchema,
     preHandler: cookieValidator,
-    handler: QuizHandler.deleteQuizHandler
+    handler: QuizControl.deleteQuizHandler
   });
   fastify.route({
     url: '/quiz/:threeWords/_qr',
     method: 'GET',
     schema: qrSchema,
-    handler: QuizHandler.getQRcodeHandler
+    handler: QuizControl.getQRcodeHandler
   });
   fastify.route({
     url: '/quiz/:threeWords/_collate',
     method: 'GET',
-    handler: QuizHandler.collateQuizHandler
+    handler: QuizControl.collateQuizHandler
   });
   fastify.route({
     url: '/quiz/:threeWords/_evaluate',
     method: [
-      "GET",
-      "POST",
-      "PUT"
+      'GET',
+      'POST',
+      'PUT'
     ],
-    handler: QuizHandler.evaluateQuizHandler
+    handler: QuizControl.evaluateQuizHandler
   });
   done();
 };

@@ -13,20 +13,20 @@ const idealObjSchema = {
     weightage: { type: 'number' },
     answer_format: {
       enum: [
-        "text",
-        "mcq",
-        "multi"
+        'text',
+        'mcq',
+        'multi'
       ]
     },
     created_at: { type: 'string' },
     updated_at: { type: 'string' }
   },
   required: [
-    "three_words",
-    "number",
-    "text",
-    "weightage",
-    "answer_format"
+    'three_words',
+    'number',
+    'text',
+    'weightage',
+    'answer_format'
   ],
   additionalProperties: true
 };
@@ -37,8 +37,8 @@ const idealObjArraySchema = {
     questions: { type: 'array' }
   },
   required: [
-    "three_words",
-    "questions"
+    'three_words',
+    'questions'
   ],
   additionalProperties: true
 };
@@ -90,7 +90,7 @@ module.exports = {
   cacheSchema: {
     body: {
       three_words: { type: 'string' },
-      questions: { type: 'array' },
+      questions: { type: 'array' }
     },
     response: {
       200: idealObjArraySchema,

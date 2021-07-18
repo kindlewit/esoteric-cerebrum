@@ -18,7 +18,7 @@ const idealObjSchema = {
     created_at: { type: 'string' }
   },
   required: [
-    "username"
+    'username'
   ],
   additionalProperties: true
 };

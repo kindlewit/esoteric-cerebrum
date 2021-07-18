@@ -20,9 +20,9 @@ const idealObjSchema = {
     updated_at: { type: 'string' }
   },
   required: [
-    "three_words",
-    "username",
-    "number"
+    'three_words',
+    'username',
+    'number'
   ],
   additionalProperties: true
 };
@@ -34,9 +34,9 @@ const idealObjArraySchema = {
     responses: { type: 'array' }
   },
   required: [
-    "three_words",
-    "username",
-    "responses"
+    'three_words',
+    'username',
+    'responses'
   ],
   additionalProperties: true
 };

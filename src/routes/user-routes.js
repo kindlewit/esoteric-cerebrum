@@ -1,46 +1,53 @@
-"use strict";
+'use strict';
 
-const UserHandler = require('../handlers/user-handlers');
-const { signupSchema, listSchema, getSchema, loginSchmea, updateSchema, deleteSchema } = require('./user-schema');
+const UserControl = require('../handlers/user-handlers');
+const {
+  signupSchema,
+  listSchema,
+  getSchema,
+  loginSchmea,
+  updateSchema,
+  deleteSchema
+} = require('./user-schema');
 
 module.exports = (fastify, opts, done) => {
   fastify.route({
     url: '/user',
     method: 'POST',
     schema: signupSchema,
-    handler: UserHandler.signupUserHandler
+    handler: UserControl.signupUserHandler
   });
   fastify.route({
     url: '/user',
     method: 'GET',
     schema: listSchema,
-    handler: UserHandler.listUserHandler
+    handler: UserControl.listUserHandler
   });
   fastify.route({
     url: '/user/:username',
     method: 'GET',
     schema: getSchema,
-    handler: UserHandler.getUserHandler
+    handler: UserControl.getUserHandler
   });
   fastify.route({
-    url: '/user:username',
+    url: '/user/:username',
     method: 'PATCH',
     schema: updateSchema,
-    preHandler: UserHandler.cookieValidator,
-    handler: UserHandler.updateUserHandler
+    preHandler: UserControl.cookieValidator,
+    handler: UserControl.updateUserHandler
   });
   fastify.route({
     url: '/user/:username',
     method: 'DELETE',
     schema: deleteSchema,
-    preHandler: UserHandler.cookieValidator,
-    handler: UserHandler.deleteUserHandler
+    preHandler: UserControl.cookieValidator,
+    handler: UserControl.deleteUserHandler
   });
   fastify.route({
     url: '/user/:username/_login',
     method: 'PUT',
     schema: loginSchmea,
-    handler: UserHandler.loginUserHandler
+    handler: UserControl.loginUserHandler
   });
   done();
 };

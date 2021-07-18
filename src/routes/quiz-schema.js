@@ -39,8 +39,8 @@ const idealObjSchema = {
     updated_at: { type: 'string' }
   },
   required: [
-    "three_words",
-    "username"
+    'three_words',
+    'username'
   ],
   additionalProperties: true
 };
@@ -49,7 +49,8 @@ const arrayObjSchema = {
   properties: {
     total_docs: { type: 'integer' },
     docs: { type: 'array' }
-  }
+  },
+  additionalProperties: true
 };
 
 module.exports = {
@@ -65,8 +66,8 @@ module.exports = {
   },
   listSchema: {
     querystring: {
-      limit: { type: 'integer' },
-      offset: { type: 'integer' },
+      page: { type: 'integer' },
+      size: { type: 'integer' },
       count: { type: 'boolean' }
     },
     response: {
@@ -99,7 +100,7 @@ module.exports = {
       200: { type: 'string' },
       400: { type: 'null' },
       500: { type: 'null' }
-    },
+    }
   },
   updateSchema: {
     params: {

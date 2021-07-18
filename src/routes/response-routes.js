@@ -1,7 +1,14 @@
 'use strict';
 
 const ResponseHandler = require('../handlers/response-handlers');
-const { createSchema, listSchema, getSchema, cacheSchema, updateSchema, deleteSchema } = require('./response-schema');
+const {
+  createSchema,
+  listSchema,
+  getSchema,
+  cacheSchema,
+  updateSchema,
+  deleteSchema
+} = require('./response-schema');
 const { cookieValidator } = require('../handlers/user-handlers');
 
 module.exports = (fastify, opts, done) => {
@@ -41,9 +48,9 @@ module.exports = (fastify, opts, done) => {
   fastify.route({
     url: '/response/_cache',
     method: [
-      "POST",
-      "PUT",
-      "PATCH"
+      'POST',
+      'PUT',
+      'PATCH'
     ],
     schema: cacheSchema,
     preHandler: cookieValidator,

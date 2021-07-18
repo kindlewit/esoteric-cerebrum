@@ -10,33 +10,91 @@
     "sourceType": "module"
   },
   "rules": {
-    "semi": [
-      "error",
-      "always"
+    "array-bracket-spacing": [
+      "warn",
+      "never"
     ],
     "arrow-spacing": [
       "error",
       {
-        "before": true,
-        "after": true
+        "after": true,
+        "before": true
       }
+    ],
+    "brace-style": [
+      "error",
+      "1tbs",
+      {
+        "allowSingleLine": true
+      }
+    ],
+    "comma-dangle": [
+      "error",
+      "never"
+    ],
+    "computed-property-spacing": [
+      "error",
+      "always"
     ],
     "default-case": "error",
     "default-case-last": "error",
     "eqeqeq": "warn",
-    "require-await": "error",
+    "key-spacing": "error",
+    "max-len": [
+      "error",
+      {
+        "code": 80,
+        "tabWidth": 2,
+        "ignoreTrailingComments": true,
+        "ignoreComments": false,
+        "ignoreStrings": true,
+        "ignoreUrls": true
+      }
+    ],
+    "no-array-constructor": "error",
+    "no-extra-semi": "error",
+    "no-irregular-whitespace": "warn",
+    "no-loop-func": "error",
+    "no-mixed-spaces-and-tabs": "error",
+    "no-nested-ternary": "error",
+    "no-new-object": "error",
+    "no-trailing-spaces": "error",
+    "no-unneeded-ternary": "error",
+    "no-unused-vars": "error",
+    "no-use-before-define": "warn",
+    "no-var": "error",
+    "object-curly-spacing": [
+      "error",
+      "always"
+    ],
+    "object-shorthand": "error",
     "one-var": [
       "error",
       {
         "initialized": "never"
       }
     ],
-    "no-trailing-spaces": "error",
-    "no-unused-vars": "error",
-    "no-mixed-spaces-and-tabs": "error",
-    "no-extra-semi": "error",
-    "no-irregular-whitespace": "warn",
-    "no-use-before-define": "warn",
-    "no-var": "error"
+    "prefer-destructuring": [
+      "error",
+      {
+        "array": true,
+        "object": true
+      }
+    ],
+    "prefer-object-spread": "error",
+    "prefer-rest-params": "error",
+    "quote-props": [
+      "error",
+      "as-needed"
+    ],
+    "quotes": [
+      "warn",
+      "single"
+    ],
+    "require-await": "error",
+    "semi": [
+      "error",
+      "always"
+    ]
   }
 }

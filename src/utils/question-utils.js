@@ -1,7 +1,27 @@
-"use strict";
+'use strict';
 
 const _ = require('lodash');
 const Question = require('../services/question-services');
+
+function sanitize(doc) {
+  let cleanObj = _.cloneDeep(doc);
+  for (let key in doc) {
+    if (_.isNil(doc[ key ]) || key === 'created_at') {
+      // Cannot insert user-defined created_at nor can it be altered
+      _.omit(cleanObj, key);
+    }
+  }
+  if (!_.isNil(doc.duration)) {
+    cleanObj.duration = parseInt(doc.duration);
+  }
+  if (!_.isNil(doc.number) && _.isString(doc.number)) {
+    cleanObj.number = parseInt(doc.number);
+  }
+  if (!_.isNil(doc.weightage) && _.isString(doc.weightage)) {
+    cleanObj.weightage = parseFloat(doc.weightage);
+  }
+  return cleanObj;
+}
 
 function splitQuestionOptionAnswer(data) {
   let options = [];
@@ -41,9 +61,11 @@ function splitQuestionOptionAnswer(data) {
 
 function mergeQuestionAndOption(questions, options) {
   for (let qn of questions) {
-    if (qn.answer_format === "mcq" || qn.answer_format === "multi") {
+    if (qn.answer_format === 'mcq' || qn.answer_format === 'multi') {
       qn.options = _.chain(options)
-        .filter(opt => opt.three_words === qn.three_words && opt.number === qn.number)
+        .filter(opt => {
+          return opt.three_words === qn.three_words && opt.number === qn.number;
+        })
         .map(opt => {
           return {
             character: opt.character,
@@ -71,13 +93,14 @@ function autoEvaluatable(threeWords) {
         if (_.isEmpty(questions)) {
           return resolve(false);
         }
-        return resolve(_.every(questions, { answer_format: 'mcq' }));
+        return resolve(questions.every(qn => qn.answer_format === 'mcq' || qn.answer_format === 'multi'));
       })
       .catch(e => reject(e));
   });
 }
 
 module.exports = {
+  sanitize,
   splitQuestionOptionAnswer,
   mergeQuestionAndOption,
   autoEvaluatable

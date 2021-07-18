@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const redis = require('redis');
 const { promisify } = require('util');
@@ -53,14 +53,20 @@ async function getResponseCache(threeWords, username) {
 
 async function deleteResponseCache(threeWords, username = null) {
   threeWords = threeWords.split('-').join('');
-  let key = username ? `ResponseCache:${threeWords}:${username}` : `ResponseCache_${threeWords}_*`;
+  let key = username
+    ? `ResponseCache:${threeWords}:${username}`
+    : `ResponseCache_${threeWords}_*`;
   return await deleteKey(key);
 }
 
 // Common fns
 async function isValid(key) {
   let data = JSON.parse(await getKey(key));
-  if (data && data.expiry_timestamp && data.expiry_timestamp > new Date().getTime()) {
+  if (
+    data &&
+    data.expiry_timestamp &&
+    data.expiry_timestamp > new Date().getTime()
+  ) {
     return true;
   }
   return false;

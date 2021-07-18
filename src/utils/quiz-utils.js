@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const _ = require('lodash');
 const Question = require('../services/question-services');
@@ -9,8 +9,8 @@ const { mergeQuestionAndOption } = require('./question-utils');
 function sanitize(doc) {
   let cleanObj = _.cloneDeep(doc);
   for (let key in doc) {
-    if (_.isNil(doc[key]) || key === "created_at" || key === "three_words") {
-      // Cannot insert user-defined created_at / three_words nor can it be altered
+    if (_.isNil(doc[ key ]) || key === 'created_at' || key === 'three_words') {
+      // Cannot insert user-defined created_at / three_words
       _.omit(cleanObj, key);
     }
   }
@@ -32,14 +32,14 @@ async function getQuestionsOfQuiz(threeWords) {
       three_words: threeWords
     },
     order: [
-      ["number", "ASC"]
+      ['number', 'ASC']
     ],
     attributes: [
-      "number",
-      "text",
-      "file",
-      "answer_format",
-      "weightage"
+      'number',
+      'text',
+      'file',
+      'answer_format',
+      'weightage'
     ]
   });
   let options = await Option.find({
@@ -47,7 +47,7 @@ async function getQuestionsOfQuiz(threeWords) {
       three_words: threeWords
     },
     attributes: {
-      exclude: ["three_words"]
+      exclude: ['three_words']
     }
   });
   return mergeQuestionAndOption(questions, options);
@@ -62,13 +62,13 @@ async function getResponsesOfQuiz(threeWords) {
       three_words: threeWords
     },
     attributes: [
-      "username",
-      "number",
-      "text",
-      "score"
+      'username',
+      'number',
+      'text',
+      'score'
     ],
     order: [
-      ["created_at", "DESC"]
+      ['created_at', 'DESC']
     ]
   });
 }

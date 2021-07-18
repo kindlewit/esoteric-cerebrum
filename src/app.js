@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const logger = require('pino')({ level: 'info' });
 const fastify = require('fastify');
@@ -7,7 +7,7 @@ const RedisStore = require('connect-redis')(session);
 
 const { client } = require('./utils/cache-utils');
 
-const app = fastify({ logger: logger });
+const app = fastify({ logger });
 const COOKIE_OPTS = {
   path: '/',
   httpOnly: true,
@@ -20,7 +20,7 @@ const COOKIE_OPTS = {
 // Cookie Middleware
 app.register(require('fastify-cookie'));
 app.register(session, {
-  secret: process.env.SESSION_SECRET ?? "ZGV2ZWxvcG1lbnQtZW52aXJvbm1lbnQtc2VjcmV0cw",
+  secret: process.env.SESSION_SECRET ?? 'ZGV2ZWxvcG1lbnQtZW52aXJvbm1lbnQtc2VjcmV0cw',
   saveUninitialized: false,
   store: new RedisStore({
     client,

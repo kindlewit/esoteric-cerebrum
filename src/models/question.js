@@ -1,8 +1,8 @@
-"use strict";
+'use strict';
 
 module.exports = (sequelize, Sequelize) => {
   return sequelize.define(
-    "question",
+    'question',
     {
       three_words: {
         type: Sequelize.STRING,
@@ -23,9 +23,9 @@ module.exports = (sequelize, Sequelize) => {
       answer_format: {
         type: Sequelize.ENUM,
         values: [
-          "text",
-          "mcq",
-          "multi"
+          'text',
+          'mcq',
+          'multi'
         ],
         allowNull: false,
         required: true

@@ -1,8 +1,8 @@
-"use strict";
+'use strict';
 
 module.exports = (sequelize, Sequelize) => {
   return sequelize.define(
-    "answer",
+    'answer',
     {
       three_words: {
         type: Sequelize.STRING(100),

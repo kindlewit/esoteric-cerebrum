@@ -1,8 +1,8 @@
-"use strict";
+'use strict';
 
 module.exports = (sequelize, Sequelize) => {
   return sequelize.define(
-    "user",
+    'user',
     {
       username: {
         type: Sequelize.STRING,

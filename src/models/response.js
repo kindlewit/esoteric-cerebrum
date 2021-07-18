@@ -1,8 +1,8 @@
-"use strict";
+'use strict';
 
 module.exports = (sequelize, Sequelize) => {
   return sequelize.define(
-    "response",
+    'response',
     {
       three_words: {
         type: Sequelize.TEXT,

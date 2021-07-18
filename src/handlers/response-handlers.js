@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const _ = require('lodash');
 const Response = require('../services/response-services');
@@ -28,7 +28,12 @@ async function createResponseHandler(request, reply) {
 
     let docs = await Response.bulkCreate(responses);
     deleteResponseCache(three_words, username);
-    return reply.code(201).send({ total_docs: docs.length, three_words, username, responses: docs });
+    return reply.code(201).send({
+      total_docs: docs.length,
+      three_words,
+      username,
+      responses: docs
+    });
   } catch (e) {
     request.log.error(e);
     return reply.code(500).send();
@@ -64,7 +69,11 @@ async function getResponseHandler(request, reply) {
     reply.code(400).send();
   }
   try {
-    if (request.body.three_words && request.body.username && _.isFinite(request.body.number)) {
+    if (
+      request.body.three_words &&
+      request.body.username &&
+      _.isFinite(request.body.number)
+      ) {
       // All 3 parameters mentioned: get query
       let { three_words, username, number } = request.body;
       let doc = await Response.get(three_words, username, number);
@@ -102,7 +111,7 @@ async function updateResponseHandler(request, reply) {
       return reply.code(404).send();
     }
     if (verifyUserAuthority(data, username)) {
-      let changes = _.omit(request.body, ["three_words", "username", "number"]); // Cannot edit these 3 attributes
+      let changes = _.omit(request.body, ['three_words', 'username', 'number']); // Cannot edit these 3 attributes
       let doc = await Response.update(three_words, username, number, changes);
       if (_.isEmpty(doc)) {
         return reply.code(404).send();
@@ -154,7 +163,7 @@ async function cacheResponseHandler(request, reply) {
       let { three_words, username, responses } = request.body;
       let data = {
         timestamp: _.now(),
-        responses: responses
+        responses
       };
       await setResponseCache(three_words, username, data);
       return reply.code(204).send();
@@ -162,10 +171,13 @@ async function cacheResponseHandler(request, reply) {
       // Return cache data
       let { three_words, username } = request.body;
       let data = await getResponseCache(three_words, username);
-      return reply.code(200).send({ three_words, username, responses: data.responses });
+      return reply.code(200).send({
+        three_words,
+        username,
+        responses: data.responses
+      });
     }
-  }
-  catch (e) {
+  } catch (e) {
     request.log.error(e);
     return reply.code(500).send();
   }
@@ -177,5 +189,5 @@ module.exports = {
   getResponseHandler,
   updateResponseHandler,
   deleteResponseHandler,
-  cacheResponseHandler,
+  cacheResponseHandler
 };

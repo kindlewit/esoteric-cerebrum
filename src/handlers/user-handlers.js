@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const _ = require('lodash');
 const bcrypt = require('bcryptjs');
@@ -10,7 +10,7 @@ function cookieValidator(request, reply, next) {
   /**
    * PreHandler function to validate user cookie
    */
-  let session = request.session;
+  let { session } = request;
   let username = request?.body?.username ?? request?.params?.username ?? null;
   if (session.username) {
     // Cookie has been authenticated
@@ -43,121 +43,88 @@ async function signupUserHandler(request, reply) {
   }
 }
 
-function listUserHandler(request, reply) {
-  if (_.has(request.query, 'count') && request.query.count) {
-    User.count()
-      .then(count => {
-        return reply.code(200).send({ total_docs: count });
-      })
-      .catch(e => {
-        request.log.error(e);
-        return reply.code(500).send();
-      });
-  } else {
-    let limit = _.has(request.query, 'limit') ? parseInt(request.query.limit) : null;
-    let offset = _.has(request.query, 'offset') ? parseInt(request.query.offset) : null;
-    User.list(limit, offset)
-      .then(docs => {
-        return reply.code(200).send({ total_docs: docs.length, docs });
-      })
-      .catch(e => {
-        request.log.error(e);
-        return reply.code(500).send();
-      });
+async function listUserHandler(request, reply) {
+  try {
+    if (_.has(request.query, 'count') && request.query.count) {
+      let count = await User.count();
+      return reply.code(200).send({ total_docs: count });
+    } else {
+      let limit = _.has(request.query, 'limit') ? parseInt(request.query.limit) : null;
+      let offset = _.has(request.query, 'offset') ? parseInt(request.query.offset) : null;
+      let docs = await User.list(limit, offset);
+      return reply.code(200).send({ total_docs: docs.length, docs });
+    }
+  } catch (e) {
+    request.log.error(e);
+    return reply.code(500).send();
   }
 }
 
-function getUserHandler(request, reply) {
+async function getUserHandler(request, reply) {
   if (_.isNil(request.params.username)) {
     return reply.code(400).send();
   }
-  if (_.has(request.query, 'linked')) {
-    User.getLinked(request.params.username, request.query.linked.split(','))
-      .then(doc => {
-        if (_.isEmpty(doc)) {
-          return reply.code(404).send();
-        }
-        return reply.code(200).send(doc);
-      })
-      .catch(e => {
-        request.log.error(e);
-        return reply.code(500).send();
-      });
-  } else {
-    User.get(request.params.username)
-      .then(doc => {
-        if (_.isEmpty(doc)) {
-          return reply.code(404).send();
-        }
-        return reply.code(200).send(doc);
-      })
-      .catch(e => {
-        request.log.error(e);
-        return reply.code(500).send();
-      });
+  try {
+    let doc = await User.get(request.params.username);
+    console.log(doc);
+    if (_.isEmpty(doc)) {
+      return reply.code(404).send();
+    }
+    return reply.code(200).send(doc);
+  } catch (e) {
+    request.log.error(e);
+    return reply.code(500).send();
   }
 }
 
-function updateUserHandler(request, reply) {
+async function updateUserHandler(request, reply) {
   /**
    * Cookie verification in pre-handler
    */
   if (_.isNil(request.params.username) || _.isNil(request.body)) {
     return reply.code(400).send();
   }
-  User.update(request.params.username, request.body)
-    .then(doc => {
-      if (_.isEmpty(doc)) {
-        return reply.code(404).send();
-      }
-      return reply.code(200).send(doc);
-    })
-    .catch(e => {
-      request.log.error(e);
-      return reply.code(500).send();
-    });
+  try {
+    let doc = await User.update(request.params.username, request.body);
+    if (_.isEmpty(doc)) {
+      return reply.code(404).send();
+    }
+    return reply.code(200).send(doc);
+  } catch (e) {
+    request.log.error(e);
+    return reply.code(500).send();
+  }
 }
 
-function deleteUserHandler(request, reply) {
+async function deleteUserHandler(request, reply) {
   /**
     * Cookie verification in pre-handler
     */
   if (_.isNil(request.params.username)) {
     return reply.code(400).send();
   }
-  if (_.has(request.query, 'purge') && request.query.purge) {
-    User.purge(request.params.username)
-      .then(() => {
-        return reply.code(204).send();
-      })
-      .catch(e => {
-        request.log.error(e);
-        return reply.code(500).send();
-      });
-  } else {
-    User.remove(request.params.username)
-      .then(() => {
-        return reply.code(204).send();
-      })
-      .catch(e => {
-        request.log.error(e);
-        return reply.code(500).send();
-      });
+  try {
+    if (_.has(request.query, 'purge') && request.query.purge) {
+      await User.purge(request.params.username);
+      return reply.code(204).send();
+    } else {
+      await User.remove(request.params.username);
+      return reply.code(204).send();
+    }
+  } catch (e) {
+    request.log.error(e);
+    return reply.code(500).send();
   }
 }
 
-function listUsernamesHandler(request, reply) {
-  User.listNames()
-    .then(docs => {
-      if (_.isEmpty(docs)) {
-        reply.code(404).send();
-      }
-      reply.code(200).send({ total_docs: docs.length, docs });
-    })
-    .catch(e => {
-      request.log.error(e);
-      reply.code(500).send();
-    });
+async function listUsernamesHandler(request, reply) {
+  try {
+    let docs = await User.listNames();
+    reply.code(200).send({ total_docs: docs.length, docs });
+  } catch (e) {
+    request.log.error(e);
+    reply.code(500).send();
+  }
 }
 
 async function loginUserHandler(request, reply) {
@@ -174,8 +141,8 @@ async function loginUserHandler(request, reply) {
       return reply.code(404).send();
     }
     if (await bcrypt.compareSync(request.body.password, doc.password)) {
-      // Create login cache
-      request.session.username = doc.username;
+      // Password validated
+      request.session.username = doc.username; // Login cookie set
       return reply.code(200).send();
     }
     return reply.code(401).send();
@@ -194,5 +161,5 @@ module.exports = {
   updateUserHandler,
   deleteUserHandler,
   listUsernamesHandler,
-  loginUserHandler,
+  loginUserHandler
 };

@@ -1,51 +1,55 @@
-"use strict";
+'use strict';
 
 const _ = require('lodash');
 const Quiz = require('../services/quiz-services');
-const { generateQuizQRCode } = require('../utils/qr-utils');
-
-const { getQuestionsOfQuiz, getResponsesOfQuiz } = require('../utils/quiz-utils');
-const { verifyUserAuthority } = require('../utils/user-utils');
+const db = require('../orm');
+const { generateQuizQRCode, computePagination } = require('../utils/misc-utils');
+const { getQuestionsOfQuiz } = require('../utils/quiz-utils');
+const { verifyUserAuthority, fetchDisplayNameFor } = require('../utils/user-utils');
 const { autoEvaluatable } = require('../utils/question-utils');
 
-function createQuizHandler(request, reply) {
+async function createQuizHandler(request, reply) {
   if (_.isNil(request.body) || _.isEmpty(request.body)) {
     return reply.code(400).send();
   }
-  let { username } = request.session;
-  let quizObj = request.body;
-  quizObj.username = username;
-  Quiz.create(quizObj)
-    .then(doc => {
-      return reply.code(201).send(doc);
-    })
-    .catch(e => {
-      request.log.error(e);
-      return reply.code(500).send();
-    });
+  try {
+    let { username } = request.session;
+    let quizObj = request.body;
+    quizObj.username = username;
+    let doc = await Quiz.create(quizObj);
+    return reply.code(201).send(doc);
+  } catch (e) {
+    request.log.error(e);
+    return reply.code(500).send();
+  }
 }
 
-function listQuizHandler(request, reply) {
-  if (_.has(request.query, 'count') && request.query.count) {
-    Quiz.count()
-      .then(count => {
-        return reply.code(200).send({ total_docs: count });
-      })
-      .catch(e => {
-        request.log.error(e);
-        return reply.code(500).send();
-      });
-  } else {
-    let limit = _.has(request.query, 'limit') ? parseInt(request.query.limit) : null;
-    let offset = _.has(request.query, 'offset') ? parseInt(request.query.offset) : null;
-    Quiz.list(limit, offset)
-      .then(docs => {
-        return reply.code(200).send({ total_docs: docs.length, docs: docs });
-      })
-      .catch(e => {
-        request.log.error(e);
-        return reply.code(500).send();
-      });
+async function listQuizHandler(request, reply) {
+  try {
+    if (_.has(request.query, 'count') && request.query.count) {
+      let count = await Quiz.count();
+      return reply.code(200).send({ total_docs: count });
+    } else {
+      let page = _.has(request.query, 'page') ? parseInt(request.query.page) : null;
+      let size = _.has(request.query, 'size') ? parseInt(request.query.size) : null;
+      let offset = page && size ? computePagination(page, size).offset : null;
+      let { count, rows } = await Quiz.list(size, offset);
+      let response = {
+        total_docs: count,
+        docs: rows
+      };
+      if (page && size) {
+        response.page = page; response.size = size;
+        if (count > (offset + size)) {
+          response.next_page = request.url
+            .replace(/page=\d+/g, `page=${parseInt(page) + 1}`);
+        }
+      }
+      return reply.code(200).send(response);
+    }
+  } catch (e) {
+    request.log.error(e);
+    return reply.code(500).send();
   }
 }
 
@@ -54,16 +58,24 @@ async function getQuizHandler(request, reply) {
     return reply.code(400).send();
   }
   try {
-    let doc = {};
-    if (_.has(request.query, 'linked')) {
-      doc = await Quiz.getLinked(request.params.threeWords, request.query.linked.split(','));
+    if (request.method === 'PUT') {
+      // Get by query
+      if (_.isNil(request.body) || _.isEmpty(request.body)) {
+        return reply.code(400).send();
+      }
+
+
+      return reply.code(202).send();
+
     } else {
-      doc = await Quiz.get(request.params.threeWords);
+      // Get single doc
+      let doc = await Quiz.get(request.params.threeWords);
+      if (_.isEmpty(doc)) {
+        return reply.code(404).send();
+      }
+      doc.display_name = await fetchDisplayNameFor(doc.username);
+      return reply.code(200).send(doc);
     }
-    if (_.isEmpty(doc)) {
-      return reply.code(404).send();
-    }
-    return reply.code(200).send(doc);
   } catch (e) {
     request.log.error(e);
     return reply.code(500).send();
@@ -83,8 +95,8 @@ async function updateQuizHandler(request, reply) {
     }
     if (verifyUserAuthority(data, username)) {
       // User has been authorized
-      let changes = _.omit(request.body, ["three_words", "username"]); // Cannot edit these 2 attributes
-      let doc = Quiz.update(threeWords, changes);
+      let changes = _.omit(request.body, ['three_words', 'username']); // Cannot edit these 2 attributes
+      let doc = await Quiz.update(threeWords, changes);
       if (_.isEmpty(doc)) {
         return reply.code(404).send();
       }
@@ -145,11 +157,11 @@ async function collateQuizHandler(request, reply) {
     // Collate quiz, questions & options
     let { threeWords } = request.params;
     let quizDoc = _.pick(await Quiz.get(threeWords), [
-      "three_words",
-      "url",
-      "title",
-      "duration",
-      "file_upload"
+      'three_words',
+      'url',
+      'title',
+      'duration',
+      'file_upload'
     ]);
     let questions = await getQuestionsOfQuiz(threeWords);
     let result = {
@@ -166,22 +178,77 @@ async function collateQuizHandler(request, reply) {
 async function evaluateQuizHandler(request, reply) {
   try {
     if (request.method === 'GET') {
-      // Manual evaluation
+      // Get data for manual evaluation
       let { threeWords } = request.params;
-      let quizDoc = _.pick(await Quiz.get(threeWords), [
-        "three_words",
-        "title",
-      ]);
-      let questions = await getQuestionsOfQuiz(threeWords);
-      let responses = await getResponsesOfQuiz(threeWords);
-      let result = {
-        ...quizDoc,
-        questions,
-        responses
-      };
-      return reply.code(202).send(result);
+      // let quizDoc = _.pick(await Quiz.get(threeWords), [
+      //   "three_words",
+      //   "title"
+      // ]);
+      // let questions = await getQuestionsOfQuiz(threeWords);
+      // let responses = await getResponsesOfQuiz(threeWords);
+      // let result = {
+      //   ...quizDoc,
+      //   questions,
+      //   responses
+      // };
+      // return reply.code(202).send(result);
+      let docs = await Quiz.find({
+        where: {
+          three_words: threeWords
+        },
+        attributes: [
+          'title',
+          'duration',
+          'file_upload',
+          'is_live'
+        ],
+        include: [
+          {
+            model: db.question,
+            attributes: {
+              exclude: ['created_at', 'updated_at', 'three_words', 'username']
+            },
+            as: 'questions',
+            include: [
+              {
+                model: db.option,
+                attributes: {
+                  exclude: ['three_words', 'username', 'number']
+                },
+                as: 'options'
+              },
+              {
+                model: db.answer,
+                attributes: {
+                  exclude: ['three_words', 'username', 'number']
+                },
+                as: 'answers'
+              }
+            ]
+          },
+          {
+            model: db.response,
+            attributes: {
+              exclude: [
+                'created_at',
+                'updated_at',
+                'three_words',
+                'username'
+              ]
+            },
+            as: 'responses'
+          }
+        ],
+        order: [
+          [db.question, 'number', 'ASC']
+        ],
+        raw: false,
+        plain: true,
+        nest: true
+      });
+      return reply.code(200).send(docs);
     } else if (request.method === 'POST') {
-      // Submit manual evaluation
+      // Submit data for manual evaluation
       return reply.code(202).send();
     } else {
       // Request auto-evaluation
@@ -189,7 +256,7 @@ async function evaluateQuizHandler(request, reply) {
       if (await autoEvaluatable(threeWords)) {
         return reply.code(202).send(true);
       }
-      return reply.code(400).send();
+      return reply.code(406).send();
     }
   } catch (e) {
     request.log.error(e);

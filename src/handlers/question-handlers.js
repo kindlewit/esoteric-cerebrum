@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const _ = require('lodash');
 const Quiz = require('../services/quiz-services');
@@ -62,9 +62,7 @@ async function listQuestionHandler(request, reply) {
       // List questions
       let limit = _.has(request.query, 'limit') ? parseInt(request.query.limit) : null;
       let offset = _.has(request.query, 'offset') ? parseInt(request.query.offset) : null;
-      let questions = await Question.list(limit, offset);
-      let options = await Option.list();
-      let docs = mergeQuestionAndOption(questions, options);
+      let docs = await Question.list(limit, offset);
       return reply.code(200).send({ total_docs: docs.length, docs });
     }
   } catch (e) {
@@ -85,12 +83,9 @@ async function getQuestionHandler(request, reply) {
       if (_.isEmpty(doc)) {
         return reply.code(404).send();
       }
-      if (_.includes(["mcq", "multi"], doc.answer_format)) {
+      if (_.includes(['mcq', 'multi'], doc.answer_format)) {
         let options = await Option.find({
-          where: {
-            three_words: three_words,
-            number: number
-          }
+          where: { three_words, number }
         });
         doc.options = options;
       }
@@ -109,7 +104,11 @@ async function getQuestionHandler(request, reply) {
 }
 
 async function updateQuestionHandler(request, reply) {
-  if (_.isNil(request.body) || _.isNil(request.body.three_words) || _.isNil(request.body.number)) {
+  if (
+    _.isNil(request.body) ||
+    _.isNil(request.body.three_words) ||
+    _.isNil(request.body.number)
+  ) {
     reply.code(400).send();
   }
   try {
@@ -120,7 +119,7 @@ async function updateQuestionHandler(request, reply) {
       return reply.code(404).send();
     }
     if (verifyUserAuthority(data, username)) {
-      let changes = _.omit(request.body, ["three_words", "number"]); // Cannot edit  these 2 attributes
+      let changes = _.omit(request.body, ['three_words', 'number']); // Cannot edit  these 2 attributes
       let doc = await Question.update(three_words, number, changes);
       if (_.isEmpty(doc)) {
         return reply.code(404).send();
@@ -136,7 +135,11 @@ async function updateQuestionHandler(request, reply) {
 }
 
 async function deleteQuestionHandler(request, reply) {
-  if (_.isNil(request.body) || _.isNil(request.body.three_words) || _.isNil(request.body.number)) {
+  if (
+    _.isNil(request.body) ||
+    _.isNil(request.body.three_words) ||
+    _.isNil(request.body.number)
+  ) {
     reply.code(400).send();
   }
   try {
@@ -167,7 +170,7 @@ function cacheQuestionHandler(request, reply) {
     let { three_words, questions } = request.body;
     let data = {
       timestamp: _.now(),
-      questions: questions
+      questions
     };
     setQuestionCache(three_words, data)
       .then(() => {

@@ -1,40 +1,13 @@
-"use strict";
+'use strict';
 
 const _ = require('lodash');
 const db = require('../orm');
-
-function sanitize(doc) {
-  let cleanObj = _.cloneDeep(doc);
-  for (let key in doc) {
-    if (_.isNil(doc[key]) || key === "created_at") {
-      // Cannot insert user-defined created_at nor can it be altered
-      _.omit(cleanObj, key);
-    }
-  }
-  if (!_.isNil(doc.duration)) {
-    cleanObj.duration = parseInt(doc.duration);
-  }
-  if (!_.isNil(doc.number) && _.isString(doc.number)) {
-    cleanObj.number = parseInt(doc.number);
-  }
-  if (!_.isNil(doc.weightage) && _.isString(doc.weightage)) {
-    cleanObj.weightage = parseFloat(doc.weightage);
-  }
-  return cleanObj;
-}
+const { sanitize } = require('../utils/question-utils');
 
 function create(doc) {
   return new Promise((resolve, reject) => {
     doc = sanitize(doc);
-    db.question.create(doc)
-      .then(() => db.question.findOne({
-        where: {
-          three_words: doc.three_words,
-          number: doc.number
-        },
-        raw: true,
-        returning: true
-      }))
+    db.question.create(doc, { raw: true, returning: true })
       .then(doc => resolve(doc))
       .catch(e => reject(e));
   });
@@ -43,24 +16,28 @@ function create(doc) {
 function bulkCreate(docs) {
   return new Promise((resolve, reject) => {
     docs = docs.map(sanitize);
-    db.question.bulkCreate(docs, { returning: true, raw: true })
+    db.question.bulkCreate(docs, { raw: true, returning: true })
       .then(docs => resolve(docs))
       .catch(e => reject(e));
   });
 }
 
 function list(limit = null, offset = null) {
-  return new Promise((resolve, reject) => {
-    db.question.findAll({
-      offset: offset,
-      limit: limit,
-      order: [
-        ['created_at', 'DESC']
-      ],
-      raw: true
-    })
-      .then(docs => resolve(_.cloneDeep(docs)))
-      .catch(e => reject(e));
+  return db.question.findAll({
+    offset,
+    limit,
+    order: [
+      ['created_at', 'DESC']
+    ],
+    include: [
+      {
+        model: db.option,
+        attributes: { exclude: ['three_words', 'number'] },
+        as: 'options'
+      }
+    ],
+    raw: false,
+    nest: true
   });
 }
 
@@ -69,12 +46,12 @@ function count() {
 }
 
 function find(query) {
-  return db.question.findAll({ ...query, raw: true });
+  return db.question.findAll(query);
 }
 
 function get(threeWords, qNum) {
   if (_.isNil(threeWords) || _.isNil(qNum)) {
-    throw Error("Missing parameters");
+    throw Error('Missing parameters');
   }
   return db.question.findOne({
     where: {
@@ -85,10 +62,7 @@ function get(threeWords, qNum) {
   });
 }
 
-async function getLinked(threeWords, qNum, list) {
-  if (_.isNil(threeWords) || _.isNil(qNum)) {
-    throw Error("Missing parameters");
-  }
+async function getLinked(threeWords, qNum) {
   let query = {
     where: {
       three_words: threeWords,
@@ -102,15 +76,15 @@ async function getLinked(threeWords, qNum, list) {
   }
   let result = { ...questionDoc };
   query.attributes = { exclude: ['three_words', 'number'] };
-  if (_.includes(list, "responses")) {
+  if (_.includes(list, 'responses')) {
     result.responses = await db.response.findAll(query) ?? [];
     result.total_responses = result.responses.length;
   }
-  if (_.includes(list, "options")) {
+  if (_.includes(list, 'options')) {
     result.options = await db.option.findAll(query) ?? [];
     result.total_options = result.options.length;
   }
-  if (_.includes(list, "answers")) {
+  if (_.includes(list, 'answers')) {
     result.answers = await db.answer.findAll(query) ?? [];
     result.total_answers = result.answers.length;
   }
@@ -119,7 +93,7 @@ async function getLinked(threeWords, qNum, list) {
 
 function update(threeWords, qNum, changes) {
   if (_.isNil(threeWords) || _.isNil(qNum) || _.isNil(changes)) {
-    throw Error("Missing parameters");
+    throw Error('Missing parameters');
   }
   changes = sanitize(changes);
   let query = {
@@ -139,7 +113,7 @@ function update(threeWords, qNum, changes) {
 
 function remove(threeWords, qNum) {
   if (_.isNil(threeWords) || _.isNil(qNum)) {
-    throw Error("Missing parameters");
+    throw Error('Missing parameters');
   }
   return new Promise((resolve, reject) => {
     db.user.destroy({
@@ -155,7 +129,7 @@ function remove(threeWords, qNum) {
 
 function removeResponses(threeWords, qNum) {
   if (_.isNil(threeWords) || _.isNil(qNum)) {
-    throw Error("Missing parameters");
+    throw Error('Missing parameters');
   }
   let query = {
     where: {
@@ -172,7 +146,7 @@ function removeResponses(threeWords, qNum) {
 
 function removeOptions(threeWords, qNum) {
   if (_.isNil(threeWords) || _.isNil(qNum)) {
-    throw Error("Missing parameters");
+    throw Error('Missing parameters');
   }
   let query = {
     where: {
@@ -189,7 +163,7 @@ function removeOptions(threeWords, qNum) {
 
 function removeAnswers(threeWords, qNum) {
   if (_.isNil(threeWords) || _.isNil(qNum)) {
-    throw Error("Missing parameters");
+    throw Error('Missing parameters');
   }
   let query = {
     where: {
@@ -206,7 +180,7 @@ function removeAnswers(threeWords, qNum) {
 
 function purge(threeWords, qNum) {
   if (_.isNil(threeWords) || _.isNil(qNum)) {
-    throw Error("Missing parameters");
+    throw Error('Missing parameters');
   }
   let query = {
     where: {

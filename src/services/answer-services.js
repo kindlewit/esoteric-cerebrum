@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const db = require('../orm');
 
@@ -7,14 +7,7 @@ const { sanitize } = require('../utils/answer-utils');
 function create(doc) {
   return new Promise((resolve, reject) => {
     doc = sanitize(doc);
-    db.answer.create(doc)
-      .then(() => db.answer.findOne({
-        where: {
-          three_words: doc.three_words,
-          number: doc.number
-        },
-        raw: true
-      }))
+    db.answer.create(doc, { returning: true, raw: true })
       .then(doc => resolve(doc))
       .catch(e => reject(e));
   });
@@ -30,10 +23,16 @@ function bulkCreate(docs) {
 }
 
 function list(limit = null, offset = null) {
-  return db.answer.findAll({
-    limit: limit,
-    offset: offset,
-    raw: true
+  return new Promise((resolve, reject) => {
+    let query = {
+      limit,
+      offset,
+      plain: true,
+      nest: true
+    };
+    db.answer.findAll(query)
+      .then(docs => resolve(docs.toJSON()))
+      .catch(e => reject(e));
   });
 }
 

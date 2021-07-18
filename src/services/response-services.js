@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const _ = require('lodash');
 const db = require('../orm');
@@ -6,7 +6,7 @@ const db = require('../orm');
 function sanitize(doc) {
   let cleanObj = _.cloneDeep(doc);
   for (let key in doc) {
-    if (_.isNil(doc[key]) || key === "created_at") {
+    if (_.isNil(doc[ key ]) || key === 'created_at') {
       // Cannot insert user-defined created_at nor can it be altered
       _.omit(cleanObj, key);
     }
@@ -49,8 +49,8 @@ function bulkCreate(docs) {
 function list(limit = null, offset = null) {
   return new Promise((resolve, reject) => {
     db.response.findAll({
-      offset: offset,
-      limit: limit,
+      offset,
+      limit,
       order: [
         ['created_at', 'DESC']
       ],
@@ -67,13 +67,13 @@ function count() {
 
 function get(threeWords, username, qNum) {
   if (_.isNil(threeWords) || _.isNil(username) || _.isNil(qNum)) {
-    throw Error("Missing parameters");
+    throw Error('Missing parameters');
   }
   return new Promise((resolve, reject) => {
     db.response.findOne({
       where: {
         three_words: threeWords,
-        username: username,
+        username,
         number: qNum
       },
       order: [
@@ -87,18 +87,30 @@ function get(threeWords, username, qNum) {
 
 function find(query) {
   if (_.isNil(query) || _.isEmpty(query)) {
-    throw Error("Missing parameters");
+    throw Error('Missing parameters');
   }
   query.raw = true;
   return db.response.findAll(query);
 }
 
 function update(threeWords, username, qNum, changes) {
-  if (_.isNil(threeWords) || _.isNil(username) || _.isNil(qNum) || _.isNil(changes)) {
-    throw Error("Missing parameters");
+  if (
+    _.isNil(threeWords) ||
+    _.isNil(username) ||
+    _.isNil(qNum) ||
+    _.isNil(changes)
+  ) {
+    throw Error('Missing parameters');
   }
   changes = sanitize(changes);
-  let query = { where: { three_words: threeWords, username: username, number: qNum }, raw: true };
+  let query = {
+    where: {
+      three_words: threeWords,
+      username,
+      number: qNum
+    },
+    raw: true
+  };
   return new Promise((resolve, reject) => {
     db.response.update(changes, query)
       .then(() => db.response.findOne(query))
@@ -109,14 +121,14 @@ function update(threeWords, username, qNum, changes) {
 
 function remove(threeWords, username, qNum) {
   if (_.isNil(threeWords) || _.isNil(username) || _.isNil(qNum)) {
-    throw Error("Missing parameters");
+    throw Error('Missing parameters');
   }
   return new Promise((resolve, reject) => {
     db.response.destroy({
       where: {
         three_words: threeWords,
-        username: username,
-        qNum: qNum
+        username,
+        qNum
       }
     })
       .then(() => resolve(true))

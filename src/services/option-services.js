@@ -1,36 +1,12 @@
-"use strict";
+'use strict';
 
-const _ = require('lodash');
 const db = require('../orm');
-
-function sanitize(doc) {
-  let cleanObj = _.cloneDeep(doc);
-  for (let key in doc) {
-    if (_.isNil(doc[key]) || key === "created_at") {
-      _.omit(cleanObj, key);
-    }
-  }
-  if (_.has(doc, 'character')) {
-    cleanObj.character = doc.character.toString().toUpperCase();
-  }
-  if (_.has(doc, 'number') && _.isString(doc.number)) {
-    cleanObj.number = parseInt(doc.number);
-  }
-  return cleanObj;
-}
+const { sanitize } = require('../utils/option-utils');
 
 function create(doc) {
   return new Promise((resolve, reject) => {
     doc = sanitize(doc);
-    db.option.create(doc)
-      .then(() => db.option.findOne({
-        where: {
-          three_words: doc.three_words,
-          number: doc.number,
-          character: doc.character
-        },
-        raw: true
-      }))
+    db.option.create(doc, { raw: true, returning: true })
       .then(doc => resolve(doc))
       .catch(e => reject(e));
   });
@@ -38,8 +14,8 @@ function create(doc) {
 
 function list(limit = null, offset = null) {
   return db.option.findAll({
-    limit: limit,
-    offset: offset,
+    limit,
+    offset,
     raw: true
   });
 }

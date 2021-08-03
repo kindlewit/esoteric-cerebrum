@@ -13,14 +13,15 @@ module.exports = (sequelize, Sequelize) => {
       title: Sequelize.STRING,
       description: Sequelize.TEXT,
       topics: Sequelize.ARRAY(Sequelize.STRING),
+      start: Sequelize.DATE,
       duration: Sequelize.INTEGER,
       file_upload: {
         type: Sequelize.BOOLEAN,
         defaultValue: true
       },
-      is_live: {
-        type: Sequelize.BOOLEAN,
-        defaultValue: false
+      status: {
+        type: Sequelize.CHAR(1),
+        defaultValue: 0
       },
       username: Sequelize.STRING
     },

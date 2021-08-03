@@ -1,15 +1,15 @@
 'use strict';
 
-const ResponseHandler = require('../handlers/response-handlers');
-const {
+import ResponseHandler from '../handlers/response-handlers';
+import {
   createSchema,
   listSchema,
   getSchema,
   cacheSchema,
   updateSchema,
   deleteSchema
-} = require('./response-schema');
-const { cookieValidator } = require('../handlers/user-handlers');
+} from './schema/response-schema';
+import { cookieValidator } from '../handlers/user-handlers';
 
 module.exports = (fastify, opts, done) => {
   fastify.route({
@@ -47,11 +47,7 @@ module.exports = (fastify, opts, done) => {
   });
   fastify.route({
     url: '/response/_cache',
-    method: [
-      'POST',
-      'PUT',
-      'PATCH'
-    ],
+    method: ['POST', 'PUT', 'PATCH'],
     schema: cacheSchema,
     preHandler: cookieValidator,
     handler: ResponseHandler.cacheResponseHandler

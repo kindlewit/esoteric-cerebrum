@@ -1,16 +1,16 @@
 'use strict';
 
-const UserControl = require('../handlers/user-handlers');
-const {
+import UserControl, { cookieValidator } from '../handlers/user-handlers';
+import {
   signupSchema,
   listSchema,
   getSchema,
   loginSchmea,
   updateSchema,
   deleteSchema
-} = require('./user-schema');
+} from './schema/user-schema';
 
-module.exports = (fastify, opts, done) => {
+export default function (fastify, opts, done) {
   fastify.route({
     url: '/user',
     method: 'POST',
@@ -33,21 +33,21 @@ module.exports = (fastify, opts, done) => {
     url: '/user/:username',
     method: 'PATCH',
     schema: updateSchema,
-    preHandler: UserControl.cookieValidator,
+    preHandler: cookieValidator,
     handler: UserControl.updateUserHandler
   });
   fastify.route({
     url: '/user/:username',
     method: 'DELETE',
     schema: deleteSchema,
-    preHandler: UserControl.cookieValidator,
+    preHandler: cookieValidator,
     handler: UserControl.deleteUserHandler
   });
   fastify.route({
-    url: '/user/:username/_login',
+    url: '/user/_login',
     method: 'PUT',
     schema: loginSchmea,
     handler: UserControl.loginUserHandler
   });
   done();
-};
+}

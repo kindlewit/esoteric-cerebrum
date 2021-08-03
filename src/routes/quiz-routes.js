@@ -1,17 +1,17 @@
 'use strict';
 
-const QuizControl = require('../handlers/quiz-handlers');
-const {
+import QuizControl from '../handlers/quiz-handlers';
+import {
   createSchema,
   listSchema,
   getSchema,
   qrSchema,
   updateSchema,
   deleteSchema
-} = require('./quiz-schema');
-const { cookieValidator } = require('../handlers/user-handlers');
+} from './schema/quiz-schema';
+import { cookieValidator } from '../handlers/user-handlers';
 
-module.exports = (fastify, opts, done) => {
+export default function (fastify, opts, done) {
   fastify.route({
     url: '/quiz',
     method: 'POST',
@@ -58,12 +58,8 @@ module.exports = (fastify, opts, done) => {
   });
   fastify.route({
     url: '/quiz/:threeWords/_evaluate',
-    method: [
-      'GET',
-      'POST',
-      'PUT'
-    ],
+    method: ['GET', 'POST', 'PUT'],
     handler: QuizControl.evaluateQuizHandler
   });
   done();
-};
+}

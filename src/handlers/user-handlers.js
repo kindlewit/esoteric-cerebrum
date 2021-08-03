@@ -1,17 +1,17 @@
 'use strict';
 
-const _ = require('lodash');
-const bcrypt = require('bcryptjs');
+import _ from 'lodash';
+import { hash, compareSync } from 'bcryptjs';
 
-const { SALT_LENGTH } = require('../../config');
-const User = require('../services/user-services');
+import User from '../services/user-services';
+import { SALT_LENGTH } from '../config';
 
-function cookieValidator(request, reply, next) {
+export function cookieValidator(request, reply, next) {
   /**
    * PreHandler function to validate user cookie
    */
   let { session } = request;
-  let username = request?.body?.username ?? request?.params?.username ?? null;
+  let username = request?.params?.username ?? request?.body?.username ?? null;
   if (session.username) {
     // Cookie has been authenticated
     if (username && session.username !== username) {
@@ -34,7 +34,7 @@ async function signupUserHandler(request, reply) {
   }
   try {
     let signupObj = request.body;
-    signupObj.password = await bcrypt.hash(signupObj.password, SALT_LENGTH);
+    signupObj.password = await hash(signupObj.password, SALT_LENGTH);
     let doc = await User.create(signupObj);
     return reply.code(201).send(doc);
   } catch (e) {
@@ -49,10 +49,14 @@ async function listUserHandler(request, reply) {
       let count = await User.count();
       return reply.code(200).send({ total_docs: count });
     } else {
-      let limit = _.has(request.query, 'limit') ? parseInt(request.query.limit) : null;
-      let offset = _.has(request.query, 'offset') ? parseInt(request.query.offset) : null;
-      let docs = await User.list(limit, offset);
-      return reply.code(200).send({ total_docs: docs.length, docs });
+      let limit = _.has(request.query, 'limit')
+        ? parseInt(request.query.limit)
+        : null;
+      let offset = _.has(request.query, 'offset')
+        ? parseInt(request.query.offset)
+        : null;
+      let { count, rows } = await User.list(limit, offset);
+      return reply.code(200).send({ total_docs: count, docs: rows });
     }
   } catch (e) {
     request.log.error(e);
@@ -66,7 +70,6 @@ async function getUserHandler(request, reply) {
   }
   try {
     let doc = await User.get(request.params.username);
-    console.log(doc);
     if (_.isEmpty(doc)) {
       return reply.code(404).send();
     }
@@ -129,18 +132,19 @@ async function listUsernamesHandler(request, reply) {
 
 async function loginUserHandler(request, reply) {
   if (
-    _.isNil(request.params.username) ||
     _.isNil(request.body) ||
+    _.isNil(request.body.username) ||
     _.isNil(request.body.password)
   ) {
     return reply.code(400).send();
   }
   try {
-    let doc = await User.get(request.params.username, true);
+    let { username, password } = request.body;
+    let doc = await User.get(username, true);
     if (_.isEmpty(doc)) {
       return reply.code(404).send();
     }
-    if (await bcrypt.compareSync(request.body.password, doc.password)) {
+    if (await compareSync(password, doc.password)) {
       // Password validated
       request.session.username = doc.username; // Login cookie set
       return reply.code(200).send();
@@ -152,9 +156,7 @@ async function loginUserHandler(request, reply) {
   }
 }
 
-
-module.exports = {
-  cookieValidator,
+export default {
   signupUserHandler,
   listUserHandler,
   getUserHandler,

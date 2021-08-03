@@ -1,9 +1,13 @@
 'use strict';
 
-const _ = require('lodash');
-const Response = require('../services/response-services');
-const { setResponseCache, getResponseCache, deleteResponseCache } = require('../utils/cache-utils');
-const { verifyUserAuthority } = require('../utils/user-utils');
+import _ from 'lodash';
+import Response from '../services/response-services';
+import {
+  setResponseCache,
+  getResponseCache,
+  deleteResponseCache
+} from '../utils/cache-utils';
+import { verifyUserAuthority } from '../utils/user-utils';
 
 async function createResponseHandler(request, reply) {
   if (
@@ -20,10 +24,15 @@ async function createResponseHandler(request, reply) {
     let { three_words } = request.body;
     let { username } = request.session;
     let responses = _.chain(request.body.responses)
-      .map(res => {
+      .map((res) => {
         return { ...res, three_words, username };
       })
-      .filter(res => _.has(res, 'number') && _.has(res, 'three_words') && _.has(res, 'username'))
+      .filter(
+        (res) =>
+          _.has(res, 'number') &&
+          _.has(res, 'three_words') &&
+          _.has(res, 'username')
+      )
       .value();
 
     let docs = await Response.bulkCreate(responses);
@@ -43,21 +52,25 @@ async function createResponseHandler(request, reply) {
 function listResponseHandler(request, reply) {
   if (_.has(request.query, 'count') && request.query.count) {
     Response.count()
-      .then(count => {
+      .then((count) => {
         return reply.code(200).send({ total_docs: count });
       })
-      .catch(e => {
+      .catch((e) => {
         request.log.error(e);
         return reply.code(500).send();
       });
   } else {
-    let limit = _.has(request.query, 'limit') ? parseInt(request.query.limit) : null;
-    let offset = _.has(request.query, 'offset') ? parseInt(request.query.offset) : null;
+    let limit = _.has(request.query, 'limit')
+      ? parseInt(request.query.limit)
+      : null;
+    let offset = _.has(request.query, 'offset')
+      ? parseInt(request.query.offset)
+      : null;
     Response.list(limit, offset)
-      .then(docs => {
+      .then((docs) => {
         return reply.code(200).send({ total_docs: docs.length, docs });
       })
-      .catch(e => {
+      .catch((e) => {
         request.log.error(e);
         return reply.code(500).send();
       });
@@ -73,7 +86,7 @@ async function getResponseHandler(request, reply) {
       request.body.three_words &&
       request.body.username &&
       _.isFinite(request.body.number)
-      ) {
+    ) {
       // All 3 parameters mentioned: get query
       let { three_words, username, number } = request.body;
       let doc = await Response.get(three_words, username, number);

@@ -1,7 +1,9 @@
 'use strict';
 
-const logger = require('pino')({ level: 'info' });
-const app = require('./app');
+import pino from 'pino';
+import app from './app';
+
+const logger = pino({ level: 'info' });
 
 app.listen(8000, '0.0.0.0', (err) => {
   if (err) {

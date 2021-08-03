@@ -1,19 +1,20 @@
 'use strict';
 
-const Sequelize = require('sequelize');
-const { DB_URI } = require('../config');
+import Sequelize from 'sequelize';
 
-const sequelize = new Sequelize(DB_URI, { logging: false });
+import { DB_URI } from './config';
+import { quiz, user, question, response, option, answer } from './models';
 
+const sequelize = new Sequelize(DB_URI.toString(), { logging: false });
 const db = {
   Sequelize,
   sequelize,
-  quiz: require('./models').quiz(sequelize, Sequelize),
-  user: require('./models').user(sequelize, Sequelize),
-  question: require('./models').question(sequelize, Sequelize),
-  response: require('./models').response(sequelize, Sequelize),
-  option: require('./models').option(sequelize, Sequelize),
-  answer: require('./models').answer(sequelize, Sequelize)
+  quiz: quiz(sequelize, Sequelize),
+  user: user(sequelize, Sequelize),
+  question: question(sequelize, Sequelize),
+  response: response(sequelize, Sequelize),
+  option: option(sequelize, Sequelize),
+  answer: answer(sequelize, Sequelize)
 };
 
 // User <=> Quiz
@@ -124,4 +125,4 @@ db.answer.belongsTo(db.option, {
   sourceKey: 'character'
 });
 
-module.exports = db;
+export default db;

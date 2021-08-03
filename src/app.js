@@ -1,13 +1,20 @@
 'use strict';
 
-const logger = require('pino')({ level: 'info' });
-const fastify = require('fastify');
-const session = require('fastify-session');
-const RedisStore = require('connect-redis')(session);
+import pino from 'pino';
+import fastify from 'fastify';
+import cookie from 'fastify-cookie';
+import session from 'fastify-session';
+import connectRedis from 'connect-redis';
 
-const { client } = require('./utils/cache-utils');
+import { client } from './utils/cache-utils';
 
-const app = fastify({ logger });
+const RedisStore = connectRedis(session);
+const app = fastify({
+  logger: pino({
+    level: 'info'
+  })
+});
+
 const COOKIE_OPTS = {
   path: '/',
   httpOnly: true,
@@ -16,11 +23,11 @@ const COOKIE_OPTS = {
   maxAge: 3600000 // 1 hour
 };
 
-
 // Cookie Middleware
-app.register(require('fastify-cookie'));
+app.register(cookie);
 app.register(session, {
-  secret: process.env.SESSION_SECRET ?? 'ZGV2ZWxvcG1lbnQtZW52aXJvbm1lbnQtc2VjcmV0cw',
+  secret:
+    process.env.SESSION_SECRET ?? 'ZGV2ZWxvcG1lbnQtZW52aXJvbm1lbnQtc2VjcmV0cw',
   saveUninitialized: false,
   store: new RedisStore({
     client,
@@ -33,8 +40,16 @@ app.register(session, {
 // Route registeration
 app.register(require('./routes/quiz-routes'), { prefix: '/api/v1' });
 app.register(require('./routes/user-routes'), { prefix: '/api/v1' });
-app.register(require('./routes/question-routes'), { prefix: '/api/v1' });
-app.register(require('./routes/response-routes'), { prefix: '/api/v1' });
-app.register(require('./routes/option-routes'), { prefix: '/api/v1' });
+// app.register(require('./routes/question-routes'), { prefix: '/api/v1' });
+// app.register(require('./routes/response-routes'), { prefix: '/api/v1' });
+// app.register(require('./routes/option-routes'), { prefix: '/api/v1' });
 
-module.exports = app;
+app.get('/', (request, reply) => {
+  return reply.code(200).send(
+    JSON.stringify({
+      healthy: true
+    })
+  );
+});
+
+export default app;

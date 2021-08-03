@@ -6,14 +6,16 @@ env/
 # FOLDERS
 node_modules/
 scripts/
-tests/*
+tests/*/*
 resources/
+rethink/*
 
 # FILES
 config.js
 index.js
 !src/models/index.js
 !src/index.js
+!src/routes/index.js
 package-lock.json
 psql-setup.sql
 words_alpha.txt
@@ -23,4 +25,5 @@ words_alpha.txt
 src/utils/segregate.js
 
 # INCLUDING TESTS
-!tests/*.test.js
+!tests/simple/*
+!tests/data/*

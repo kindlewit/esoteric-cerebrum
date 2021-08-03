@@ -1,10 +1,10 @@
 'use strict';
 
-const _ = require('lodash');
-const Question = require('../services/question-services');
-const Option = require('../services/option-services');
-const Response = require('../services/response-services');
-const { mergeQuestionAndOption } = require('./question-utils');
+import _ from 'lodash';
+import Question from '../services/question-services';
+import Option from '../services/option-services';
+import Response from '../services/response-services';
+import { mergeQuestionAndOption } from './question-utils';
 
 function sanitize(doc) {
   let cleanObj = _.cloneDeep(doc);
@@ -73,7 +73,7 @@ async function getResponsesOfQuiz(threeWords) {
   });
 }
 
-module.exports = {
+export {
   sanitize,
   getQuestionsOfQuiz,
   getResponsesOfQuiz

@@ -1,7 +1,7 @@
 'use strict';
 
-const _ = require('lodash');
-const { getDisplayName } = require('../services/user-services');
+import _ from 'lodash';
+import { getDisplayName } from '../services/user-services';
 
 function sanitize(doc) {
   let cleanObj = _.cloneDeep(doc);
@@ -49,7 +49,7 @@ async function fetchDisplayNameFor(username) {
   return name.display_name;
 }
 
-module.exports = {
+export {
   sanitize,
   verifyUserAuthority,
   fetchDisplayNameFor

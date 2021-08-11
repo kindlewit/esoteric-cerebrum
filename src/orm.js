@@ -5,7 +5,7 @@ import Sequelize from 'sequelize';
 import { DB_URI } from './config';
 import { quiz, user, question, response, option, answer } from './models';
 
-const sequelize = new Sequelize(DB_URI.toString(), { logging: false });
+const sequelize = new Sequelize(DB_URI?.toString(), { logging: false });
 const db = {
   Sequelize,
   sequelize,

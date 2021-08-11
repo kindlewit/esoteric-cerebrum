@@ -1,4 +1,4 @@
-export const singleQuiz = {
+const singleQuiz = {
   username: 'test_user1',
   title: 'Random Quiz 1',
   description: 'Quiz about random stuff',
@@ -7,7 +7,7 @@ export const singleQuiz = {
   start: 1627759800000
 };
 
-export const multiQuizzes = [
+const multiQuizzes = [
   {
     username: 'test_user2',
     title: 'Specific Quiz 1',
@@ -42,7 +42,8 @@ export const multiQuizzes = [
 
 const [nonFileQuiz, liveQuiz, nonFileLiveQuiz] = multiQuizzes;
 
-export {
+module.exports = {
+  singleQuiz,
   nonFileQuiz,
   liveQuiz,
   nonFileLiveQuiz

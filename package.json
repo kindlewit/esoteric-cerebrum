@@ -22,6 +22,7 @@
     "fastify-session": "^5.2.1",
     "lodash": "^4.17.21",
     "pg": "^8.6.0",
+    "pino-elasticsearch": "^6.1.0",
     "redis": "^3.1.2",
     "rethink": "^1.4.0",
     "sequelize": "^6.6.2"

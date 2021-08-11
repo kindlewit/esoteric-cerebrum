@@ -1,10 +1,10 @@
 /**
  * Unit tests for all /quiz API endpoints
  */
-import app from '../../lib/app';
-import db from '../../lib/orm';
-import { singleQuiz } from '../data/quiz-data';
-import { singleUser } from '../data/user-data';
+const app = require('../../lib/app');
+const db = require('../../lib/orm');
+const { singleQuiz } = require('../data/quiz-data');
+const { singleUser } = require('../data/user-data');
 
 beforeAll(() => {
   return db.quiz.destroy({ truncate: { cascade: true } });

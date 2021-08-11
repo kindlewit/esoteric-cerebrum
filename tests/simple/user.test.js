@@ -1,6 +1,7 @@
-import app from '../../lib/app';
-import db from '../../lib/orm';
-import { singleUser } from '../data/user-data';
+const app = require('../../lib/app');
+const db = require('../../lib/orm');
+const { singleQuiz } = require('../data/quiz-data');
+const { singleUser } = require('../data/user-data');
 
 beforeAll(() => {
   return db.user.destroy({ truncate: { cascade: true } });

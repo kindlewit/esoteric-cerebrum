@@ -1,19 +1,14 @@
 'use strict';
 
-import pino from 'pino';
 import fastify from 'fastify';
 import cookie from 'fastify-cookie';
 import session from 'fastify-session';
 import connectRedis from 'connect-redis';
 
 import { client } from './utils/cache-utils';
-
+import { apiV1Logger } from './utils/logger-utils';
 const RedisStore = connectRedis(session);
-const app = fastify({
-  logger: pino({
-    level: 'info'
-  })
-});
+const app = fastify({ logger: apiV1Logger });
 
 const COOKIE_OPTS = {
   path: '/',

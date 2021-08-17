@@ -5,9 +5,8 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node lib/index.js",
-    "dev": "nodemon src/index.js",
+    "watch": "nodemon lib/index.js",
     "build": "babel src --out-dir lib --extensions '.js,.ts'",
-    "watch": "ts-node-dev --respawn src/index.js",
     "test": "jest --forceExit tests/simple/",
     "test:extensive": "jest --forceExit tests/extensive",
     "tsc": "tsc"
@@ -19,6 +18,7 @@
     "connect-redis": "^6.0.0",
     "fastify": "^3.17.0",
     "fastify-cookie": "^5.3.1",
+    "fastify-multipart": "^4.0.7",
     "fastify-session": "^5.2.1",
     "lodash": "^4.17.21",
     "pg": "^8.6.0",

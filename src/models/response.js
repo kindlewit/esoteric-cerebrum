@@ -1,27 +1,27 @@
 'use strict';
 
-module.exports = (sequelize, Sequelize) => {
+module.exports = (sequelize, DataTypes) => {
   return sequelize.define(
     'response',
     {
       three_words: {
-        type: Sequelize.TEXT,
+        type: DataTypes.TEXT,
         primaryKey: true,
         allowNull: false
       },
       username: {
-        type: Sequelize.TEXT(100),
+        type: DataTypes.STRING,
         primaryKey: true,
         allowNull: false
       },
       number: {
-        type: Sequelize.INTEGER,
+        type: DataTypes.INTEGER,
         primaryKey: true,
         allowNull: false
       },
-      text: Sequelize.TEXT,
+      text: DataTypes.TEXT,
       score: {
-        type: Sequelize.FLOAT,
+        type: DataTypes.FLOAT,
         allowNull: true,
         defaultValue: 0.0
       }

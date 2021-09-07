@@ -1,29 +1,24 @@
 'use strict';
 
-module.exports = (sequelize, Sequelize) => {
+module.exports = (sequelize, DataTypes) => {
   return sequelize.define(
     'user',
     {
       username: {
-        type: Sequelize.STRING,
+        type: DataTypes.STRING,
         primaryKey: true,
         allowNull: false
       },
       password: {
-        type: Sequelize.STRING,
+        type: DataTypes.STRING,
         allowNull: false,
         required: true
       },
       email: {
-        type: Sequelize.STRING,
+        type: DataTypes.STRING,
         required: true
       },
-      display_name: Sequelize.STRING,
-      attended: {
-        type: Sequelize.ARRAY(Sequelize.STRING),
-        allowNull: true,
-        defaultValue: []
-      }
+      display_name: DataTypes.STRING
     },
     {
       underscored: true,

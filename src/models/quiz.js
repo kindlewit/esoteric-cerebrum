@@ -9,28 +9,35 @@ module.exports = (sequelize, DataTypes) => {
         primaryKey: true,
         allowNull: false
       },
-      meet: DataTypes.STRING,
       title: DataTypes.STRING,
       description: DataTypes.TEXT,
-      topics: DataTypes.ARRAY(DataTypes.STRING),
+      topics: DataTypes.ARRAY(DataTypes.SMALLINT.UNSIGNED),
       start: DataTypes.DATE,
-      duration: DataTypes.INTEGER,
-      file_upload: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: true
-      },
       status: {
-        type: DataTypes.SMALLINT,
+        type: DataTypes.SMALLINT.UNSIGNED,
         defaultValue: 0
       },
-      username: DataTypes.STRING
+      username: DataTypes.STRING,
+      config: DataTypes.JSON
+      // JSON will contain: meet, duration, file_upload
     },
     {
       underscored: true,
       timestamps: true,
       createdAt: 'created_at',
       updatedAt: 'updated_at',
-      freezeTableName: true
+      freezeTableName: true,
+      indexes: [
+        {
+          fields: ['start']
+        },
+        {
+          fields: ['username']
+        },
+        {
+          fields: ['topics']
+        }
+      ]
     }
   );
 };

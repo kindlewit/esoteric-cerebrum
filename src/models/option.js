@@ -29,7 +29,12 @@ module.exports = (sequelize, DataTypes) => {
     {
       underscored: true,
       timestamps: false,
-      freezeTableName: true
+      freezeTableName: true,
+      indexes: [
+        {
+          fields: ['is_answer']
+        }
+      ]
     }
   );
 };

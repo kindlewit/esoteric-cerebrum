@@ -9,11 +9,7 @@ module.exports = (sequelize, DataTypes) => {
         primaryKey: true,
         allowNull: false
       },
-      password: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        required: true
-      },
+      password: DataTypes.STRING, // NULLable with Google login
       email: {
         type: DataTypes.STRING,
         required: true
@@ -24,8 +20,14 @@ module.exports = (sequelize, DataTypes) => {
       underscored: true,
       timestamps: true,
       createdAt: 'created_at',
-      updatedAt: false,
-      freezeTableName: true
+      updatedAt: 'updated_at',
+      freezeTableName: true,
+      indexes: [
+        {
+          unique: true,
+          fields: ['email']
+        }
+      ]
     }
   );
 };

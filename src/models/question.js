@@ -6,7 +6,8 @@ module.exports = (sequelize, DataTypes) => {
     {
       three_words: {
         type: DataTypes.STRING,
-        primaryKey: true
+        primaryKey: true,
+        allowNull: false
       },
       number: {
         type: DataTypes.INTEGER,
@@ -14,22 +15,18 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false
       },
       text: DataTypes.TEXT,
-      file: DataTypes.STRING,
-      weightage: {
-        type: DataTypes.FLOAT,
-        required: true,
-        allowNull: false
-      },
       answer_format: {
         type: DataTypes.ENUM,
         values: [
           'text',
           'mcq',
-          'multi'
+          'msq'
         ],
         allowNull: false,
         required: true
-      }
+      },
+      weightage: DataTypes.JSON,
+      files: DataTypes.ARRAY(DataTypes.STRING(255))
     },
     {
       underscored: true,

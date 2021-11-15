@@ -46,7 +46,10 @@
     "eqeqeq": "warn",
     "indent": [
       "error",
-      2
+      2,
+      {
+        "SwitchCase": 1
+      }
     ],
     "key-spacing": "error",
     "max-len": [
@@ -61,6 +64,7 @@
       }
     ],
     "no-array-constructor": "error",
+    "no-case-declarations": "error",
     "no-duplicate-imports": "error",
     "no-extra-semi": "error",
     "no-irregular-whitespace": "warn",
@@ -75,6 +79,10 @@
     "no-use-before-define": "warn",
     "no-var": "error",
     "no-whitespace-before-property": "error",
+    "object-curly-newline": [
+      "error",
+      "always"
+    ],
     "object-curly-spacing": [
       "error",
       "always"
@@ -108,6 +116,7 @@
       "error",
       "always"
     ],
+    "space-before-blocks": "error",
     "space-before-function-paren": [
       "error",
       {

@@ -5,9 +5,10 @@ module.exports = (sequelize, DataTypes) => {
     'topic',
     {
       id: {
-        type: DataTypes.INTEGER.UNSIGNED,
+        type: DataTypes.INTEGER,
         primaryKey: true,
-        allowNull: false
+        allowNull: false,
+        autoIncrement: true
       },
       text: DataTypes.STRING(100)
     },

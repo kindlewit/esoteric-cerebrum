@@ -11,10 +11,9 @@ module.exports = (sequelize, DataTypes) => {
       },
       title: DataTypes.STRING,
       description: DataTypes.TEXT,
-      topics: DataTypes.ARRAY(DataTypes.SMALLINT.UNSIGNED),
       start: DataTypes.DATE,
       status: {
-        type: DataTypes.SMALLINT.UNSIGNED,
+        type: DataTypes.SMALLINT,
         defaultValue: 0
       },
       username: DataTypes.STRING,
@@ -33,9 +32,6 @@ module.exports = (sequelize, DataTypes) => {
         },
         {
           fields: ['username']
-        },
-        {
-          fields: ['topics']
         }
       ]
     }

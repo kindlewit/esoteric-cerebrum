@@ -13,7 +13,8 @@ const db = {
   user: user(sequelize, Sequelize),
   question: question(sequelize, Sequelize),
   option: option(sequelize, Sequelize),
-  topic: topic(sequelize, Sequelize)
+  topic: topic(sequelize, Sequelize),
+  quizTopic: quizTopic(sequelize)
 };
 
 // User <=> Quiz
@@ -62,14 +63,14 @@ db.option.belongsTo(db.question, {
 
 // Quiz <=> Topic
 db.quiz.belongsToMany(db.topic, {
-  through: quizTopic(sequelize, Sequelize),
-  foreignKey: 'three_words',
+  through: db.quizTopic,
   as: 'topics'
 });
 db.topic.belongsToMany(db.quiz, {
-  through: quizTopic(sequelize, Sequelize),
-  foreignKey: 'id',
+  through: db.quizTopic,
   as: 'quizzes'
 });
+
+// db.sequelize.sync({ force: true });
 
 export default db;

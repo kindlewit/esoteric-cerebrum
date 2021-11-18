@@ -16,8 +16,14 @@ module.exports = (sequelize, DataTypes) => {
       underscored: true,
       timestamps: true,
       createdAt: 'created_at',
-      updatedAt: false,
-      freezeTableName: true
+      updatedAt: 'updated_at',
+      freezeTableName: true,
+      indexes: [
+        {
+          unique: true,
+          fields: ['text']
+        }
+      ]
     }
   );
 };

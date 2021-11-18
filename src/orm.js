@@ -63,10 +63,12 @@ db.option.belongsTo(db.question, {
 
 // Quiz <=> Topic
 db.quiz.belongsToMany(db.topic, {
+  foreignKey: 'three_words',
   through: db.quizTopic,
   as: 'topics'
 });
 db.topic.belongsToMany(db.quiz, {
+  foreignKey: 'id',
   through: db.quizTopic,
   as: 'quizzes'
 });

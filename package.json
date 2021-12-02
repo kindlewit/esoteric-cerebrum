@@ -8,7 +8,9 @@
     "watch": "nodemon lib/index.js",
     "build": "babel src --out-dir lib --extensions '.js,.ts'",
     "test": "jest --forceExit tests/simple/",
+    "test:watch": "jest --watch tests/simple",
     "test:extensive": "jest --forceExit tests/extensive",
+    "test:extensive:watch": "jest --watch tests/extensive",
     "tsc": "tsc"
   },
   "author": "datmemerboi",

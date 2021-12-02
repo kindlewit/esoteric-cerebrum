@@ -1,35 +1,32 @@
 'use strict';
 
-module.exports = (sequelize, Sequelize) => {
+module.exports = (sequelize, DataTypes) => {
   return sequelize.define(
     'question',
     {
       three_words: {
-        type: Sequelize.STRING,
-        primaryKey: true
-      },
-      number: {
-        type: Sequelize.INTEGER,
+        type: DataTypes.STRING,
         primaryKey: true,
         allowNull: false
       },
-      text: Sequelize.TEXT,
-      file: Sequelize.STRING,
-      weightage: {
-        type: Sequelize.FLOAT,
-        required: true,
+      number: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
         allowNull: false
       },
+      text: DataTypes.TEXT,
       answer_format: {
-        type: Sequelize.ENUM,
+        type: DataTypes.ENUM,
         values: [
           'text',
           'mcq',
-          'multi'
+          'msq'
         ],
         allowNull: false,
         required: true
-      }
+      },
+      weightage: DataTypes.JSON,
+      files: DataTypes.ARRAY(DataTypes.STRING(255))
     },
     {
       underscored: true,

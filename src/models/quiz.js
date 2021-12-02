@@ -1,36 +1,39 @@
 'use strict';
 
-module.exports = (sequelize, Sequelize) => {
+module.exports = (sequelize, DataTypes) => {
   return sequelize.define(
     'quiz',
     {
       three_words: {
-        type: Sequelize.STRING(100),
+        type: DataTypes.STRING(100),
         primaryKey: true,
         allowNull: false
       },
-      url: Sequelize.STRING,
-      title: Sequelize.STRING,
-      description: Sequelize.TEXT,
-      topics: Sequelize.ARRAY(Sequelize.STRING),
-      start: Sequelize.DATE,
-      duration: Sequelize.INTEGER,
-      file_upload: {
-        type: Sequelize.BOOLEAN,
-        defaultValue: true
-      },
+      title: DataTypes.STRING,
+      description: DataTypes.TEXT,
+      start: DataTypes.DATE,
       status: {
-        type: Sequelize.CHAR(1),
+        type: DataTypes.SMALLINT,
         defaultValue: 0
       },
-      username: Sequelize.STRING
+      username: DataTypes.STRING,
+      config: DataTypes.JSON
+      // JSON will contain: meet, duration, file_upload
     },
     {
       underscored: true,
       timestamps: true,
       createdAt: 'created_at',
       updatedAt: 'updated_at',
-      freezeTableName: true
+      freezeTableName: true,
+      indexes: [
+        {
+          fields: ['start']
+        },
+        {
+          fields: ['username']
+        }
+      ]
     }
   );
 };

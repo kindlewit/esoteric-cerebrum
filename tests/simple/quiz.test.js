@@ -1,14 +1,24 @@
 /**
- * Unit tests for all /quiz API endpoints
+ * Simple unit tests for all /quiz API endpoints
  */
-const app = require('../../lib/app');
-const db = require('../../lib/orm');
+const { join } = require('path');
+
+const app = require(join(__dirname, '..', '..', 'lib', 'app'));
+const db = require(join(__dirname, '..', '..', 'lib', 'orm'));
 const { singleQuiz } = require('../data/quiz-data');
 const { singleUser } = require('../data/user-data');
 
-beforeAll(() => {
-  return db.quiz.destroy({ truncate: { cascade: true } });
+describe('Fetch before user creation', () => {});
+describe('Fetch after user creation', () => {});
+describe('Fetch before creation', () => {});
+
+describe('Create quiz', () => {
+  test('should return ')
 });
+
+// beforeAll(() => {
+//   return db.quiz.destroy({ truncate: { cascade: true } });
+// });
 
 test('Create Quiz without loing', async function () {
   const res = await app.inject({

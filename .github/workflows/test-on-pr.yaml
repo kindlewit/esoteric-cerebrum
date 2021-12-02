@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [12.x]
+        node-version: [14.x]
     steps:
       - uses: actions/checkout@master
       - name: Using Node.js ${{ matrix.node-version }}
@@ -21,6 +21,11 @@ jobs:
         run: npm i
       - name: Build Project
         run: npm run build
+      - name: Zip code & packages
+        run: zip -r shipment.zip ./lib ./node_modules ./package.json
+      - name: Zipped size
+        run: ls -lh ./shipment.zip
+
   test:
     needs: build
     runs-on: ubuntu-latest
@@ -37,7 +42,3 @@ jobs:
         run: npm run test
       - name: Extensive Tests
         run: npm run test:extensive
-      - name: Zip code & packages
-        run: zip -r shipment.zip ./lib ./node_modules ./package.json
-      - name: Zipped size
-        run: ls -lh ./shipment.zip

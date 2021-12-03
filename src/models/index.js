@@ -1,15 +1,15 @@
 const quiz = require('./quiz');
 const user = require('./user');
 const question = require('./question');
-const response = require('./response');
 const option = require('./option');
-const answer = require('./answer');
+const topic = require('./topic');
+const quizTopic = require('./quiz-topic');
 
 module.exports = {
   quiz,
   user,
   question,
-  response,
   option,
-  answer
+  topic,
+  quizTopic
 };

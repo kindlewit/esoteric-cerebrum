@@ -2,19 +2,15 @@
 
 module.exports = (sequelize, DataTypes) => {
   return sequelize.define(
-    'user',
+    'topic',
     {
-      username: {
-        type: DataTypes.STRING,
+      id: {
+        type: DataTypes.INTEGER,
         primaryKey: true,
-        allowNull: false
+        allowNull: false,
+        autoIncrement: true
       },
-      password: DataTypes.STRING, // NULLable with Google login
-      email: {
-        type: DataTypes.STRING,
-        required: true
-      },
-      display_name: DataTypes.STRING
+      text: DataTypes.STRING(100)
     },
     {
       underscored: true,
@@ -25,7 +21,7 @@ module.exports = (sequelize, DataTypes) => {
       indexes: [
         {
           unique: true,
-          fields: ['email']
+          fields: ['text']
         }
       ]
     }

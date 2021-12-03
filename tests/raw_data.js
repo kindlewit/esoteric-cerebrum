@@ -2,10 +2,17 @@
  * All data to use for testing
  */
 
-let singleUser =  {
+let singleUser = {
   username: 'test_user1',
   password: 'test_user1',
   display_name: 'User Tester I',
+  email: 'user1@test.com'
+};
+
+let updatedSingleUser = {
+  username: 'test_user1',
+  password: 'test_user2',
+  display_name: 'User Tester 1',
   email: 'user1@test.com'
 };
 
@@ -30,7 +37,37 @@ let multiUsers = [
   }
 ];
 
+let userWithoutUsername = {
+  password: 'test_user5',
+  display_name: 'User Tester 5',
+  email: 'user5@test.com'
+};
+
+let userWithoutPassword = {
+  username: 'test_user6',
+  display_name: 'User Tester 6',
+  email: 'user6@test.com'
+};
+
+let userWithoutEmail = {
+  username: 'test_user7',
+  password: 'test_user7',
+  display_name: 'User Tester 7th'
+};
+
+let userWithChangeInUsername = {
+  username: 'test_user220',
+  password: 'test_user1',
+  display_name: 'User Tester I',
+  email: 'user1@test.com'
+};
+
 module.exports = {
   singleUser,
-  multiUsers
+  multiUsers,
+  userWithoutUsername,
+  userWithoutPassword,
+  userWithoutEmail,
+  updatedSingleUser,
+  userWithChangeInUsername
 };

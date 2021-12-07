@@ -55,7 +55,7 @@ let userWithoutEmail = {
   display_name: 'User Tester 7th'
 };
 
-let userWithChangeInUsername = {
+let userWithChangedUsername = {
   username: 'test_user220',
   password: 'test_user1',
   display_name: 'User Tester I',
@@ -69,5 +69,5 @@ module.exports = {
   userWithoutPassword,
   userWithoutEmail,
   updatedSingleUser,
-  userWithChangeInUsername
+  userWithChangedUsername
 };

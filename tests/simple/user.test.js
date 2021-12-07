@@ -7,7 +7,11 @@ const { describe, test, expect } = global;
 const app = require(join(__dirname, '..', '..', 'lib', 'app')).default();
 // const db = require(join(__dirname, '..', '..', 'lib', 'orm'));
 
-const { endpoints, data } = require(join(__dirname, '..', 'constants.js')).user;
+const { endpoints, data, cookieId } = require(join(
+  __dirname,
+  '..',
+  'constants.js'
+)).user;
 const COOKIES = {};
 
 describe('Fetch users', () => {
@@ -26,14 +30,15 @@ describe('Fetch users', () => {
         url: endpoints.fetchAllUsers
       });
 
-      let body = JSON.parse(res.body);
+      let { total_docs, docs } = JSON.parse(res.body);
 
-      expect(body.total_docs).not.toBeNull();
-      expect(body.total_docs).toBeDefined();
-      expect(Number.isFinite(body.total_docs)).toBe(true);
-      expect(body.docs).not.toBeNull();
-      expect(body.docs).toBeDefined();
-      expect(Array.isArray(body.docs)).toBe(true);
+      expect(total_docs).toBeDefined();
+      expect(total_docs).not.toBeNull();
+      expect(Number.isFinite(total_docs)).toBe(true);
+
+      expect(docs).not.toBeNull();
+      expect(docs).toBeDefined();
+      expect(Array.isArray(docs)).toBe(true);
     });
 
     test('should return 0 users', async () => {
@@ -42,17 +47,17 @@ describe('Fetch users', () => {
         url: endpoints.fetchAllUsers
       });
 
-      let body = JSON.parse(res.body);
+      let { total_docs, docs } = JSON.parse(res.body);
 
-      expect(body.total_docs).not.toBeNull();
-      expect(body.total_docs).toBeDefined();
-      expect(Number.isFinite(body.total_docs)).toBe(true);
-      expect(body.total_docs).toBe(0);
+      expect(total_docs).toBeDefined();
+      expect(total_docs).not.toBeNull();
+      expect(Number.isFinite(total_docs)).toBe(true);
+      expect(total_docs).toBe(0);
 
-      expect(body.docs).not.toBeNull();
-      expect(body.docs).toBeDefined();
-      expect(Array.isArray(body.docs)).toBe(true);
-      expect(body.docs.length).toBe(0);
+      expect(docs).not.toBeNull();
+      expect(docs).toBeDefined();
+      expect(Array.isArray(docs)).toBe(true);
+      expect(docs.length).toBe(0);
     });
   });
 });
@@ -62,7 +67,7 @@ describe('Pure user creation', () => {
     test('should return 201 with valid schema', async () => {
       const res = await app.inject({
         method: 'POST',
-        url: endpoints.createNewUser,
+        url: endpoints.createUser,
         body: JSON.stringify(data.singleUser)
       });
 
@@ -73,19 +78,38 @@ describe('Pure user creation', () => {
 
       expect(body.username).toBeDefined(); // Username should be present
       expect(body.username).not.toBeNull();
-      expect(body.username).toBe(data.createNewUser.username); // Same as request
+      expect(body.username.equals(data.createUser.username)).toBe(true); // Same as request
       expect(body.password).toBeUndefined(); // Password should not be present
     });
 
     test('should return 403 on duplication', async () => {
       const res = await app.inject({
         method: 'POST',
-        url: endpoints.createNewUser,
+        url: endpoints.createUser,
         body: JSON.stringify(data.singleUser)
       });
 
       expect(res.statusCode).toBe(403);
       expect(res.body).toBeUndefined();
+    });
+
+    test('should return 200 & user on post-create fetch', async () => {
+      let { singleUser } = data;
+      const res = await app.inject({
+        method: 'GET',
+        url: endpoints.fetchOneUser + `/${singleUser.username}`
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBeDefined();
+      expect(res.body).not.toBeNull();
+
+      let body = JSON.parse(res.body);
+
+      expect(body.username).toBeDefined();
+      expect(body.username).not.toBeNull();
+      expect(body.username.equals(singleUser.username)).toBe(true);
+      expect(body.password).toBeUndefined();
     });
   });
 
@@ -93,7 +117,7 @@ describe('Pure user creation', () => {
     test('should return 400', async () => {
       const res = await app.inject({
         method: 'POST',
-        url: endpoints.createNewUser,
+        url: endpoints.createUser,
         body: JSON.stringify(data.multiUser)
       });
 
@@ -108,7 +132,7 @@ describe('Impure user creation', () => {
     test('should return 400 without body', async () => {
       const res = await app.inject({
         method: 'POST',
-        url: endpoints.createNewUser,
+        url: endpoints.createUser,
         body: JSON.stringify(data.userWithoutUsername)
       });
 
@@ -121,7 +145,7 @@ describe('Impure user creation', () => {
     test('should return 400 without body', async () => {
       const res = await app.inject({
         method: 'POST',
-        url: endpoints.createNewUser,
+        url: endpoints.createUser,
         body: JSON.stringify(data.userWithoutEmail)
       });
 
@@ -134,7 +158,7 @@ describe('Impure user creation', () => {
     test('should return 400 without body', async () => {
       const res = await app.inject({
         method: 'POST',
-        url: endpoints.createNewUser,
+        url: endpoints.createUser,
         body: JSON.stringify(data.userWithoutPassword)
       });
 
@@ -160,14 +184,15 @@ describe('Fetch users', () => {
         url: endpoints.fetchAllUsers
       });
 
-      let body = JSON.parse(res.body);
+      let { total_docs, docs } = JSON.parse(res.body);
 
-      expect(body.total_docs).not.toBeNull();
-      expect(body.total_docs).toBeDefined();
-      expect(Number.isFinite(body.total_docs)).toBe(true);
-      expect(body.docs).not.toBeNull();
-      expect(body.docs).toBeDefined();
-      expect(Array.isArray(body.docs)).toBe(true);
+      expect(total_docs).toBeDefined();
+      expect(total_docs).not.toBeNull();
+      expect(Number.isFinite(total_docs)).toBe(true);
+
+      expect(docs).toBeDefined();
+      expect(docs).not.toBeNull();
+      expect(Array.isArray(docs)).toBe(true);
     });
 
     test('should have atleast 1 user', async () => {
@@ -221,8 +246,164 @@ describe('Update users', () => {
       expect(body.display_name === updatedSingleUser.display_name);
     });
   });
-  describe('Impure update', () => {});
-  describe('Bulk update', () => {});
+
+  describe('Username change', () => {
+    test('should return 403', async () => {
+      let { singleUser, userWithChangedUsername } = data;
+      const res = await app.inject({
+        method: 'PATCH',
+        url: endpoints.updateUser + `/${singleUser.username}`,
+        body: JSON.stringify(userWithChangedUsername)
+      });
+
+      expect(res.statusCode).toBe(403);
+      expect(res.body).toBeUndefined();
+    });
+  });
+
+  describe('Bulk update', () => {
+    test('should return 403', async () => {
+      let { multiUser } = data;
+      const res = await app.inject({
+        method: 'POST',
+        url: endpoints.updateUser,
+        body: JSON.stringify(multiUser)
+      });
+
+      expect(res.statusCode).toBe(403);
+      expect(res.body).toBeUndefined();
+    });
+  });
+});
+
+describe('Login user', () => {
+  test('should return 400 on empty request', async () => {
+    const res = await app.inject({
+      method: 'PUT',
+      url: endpoints.loginUser,
+      body: JSON.stringify({})
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toBeUndefined();
+  });
+
+  test('should return 404 on non-existant user', async () => {
+    let { userWithoutEmail } = data;
+    const res = await app.inject({
+      method: 'PUT',
+      url: endpoints.loginUser,
+      body: JSON.stringify(userWithoutEmail)
+    });
+
+    expect(res.statusCode).toBe(404);
+    expect(res.body).toBeUndefined();
+  });
+
+  test('should return 401 on wrong credentials', async () => {
+    let { singleUser } = data;
+    const res = await app.inject({
+      method: 'PUT',
+      url: endpoints.loginUser,
+      body: JSON.stringify(singleUser)
+    });
+
+    expect(res.statusCode).toBe(401);
+    expect(res.body).toBeUndefined();
+  });
+
+  test('should return 200 on proper login', async () => {
+    let { username, password } = data.updatedSingleUser;
+    const res = await app.inject({
+      method: 'PUT',
+      url: endpoints.loginUser,
+      body: JSON.stringify({ username, password })
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toBeUndefined();
+  });
+
+  test('should return valid cookie on login', async () => {
+    let { username, password } = data.updatedSingleUser;
+    const res = await app.inject({
+      method: 'PUT',
+      url: endpoints.loginUser,
+      body: JSON.stringify({ username, password })
+    });
+
+    let cookie = res.getHeader(cookieId);
+
+    expect(cookie).toBeDefined();
+    expect(cookie).not.toBeNull();
+  });
+});
+
+describe('Delete users', () => {
+  describe('Single User', () => {
+    test('should return 204', async () => {
+      let { username } = data.singleUser;
+      const res = await app.inject({
+        method: 'DELETE',
+        url: endpoints.deleteUser + `/${username}`
+      });
+
+      expect(res.statusCode).toBe(204);
+      expect(res.body).toBeUndefined();
+    });
+
+    test('should return 400 on retry', async () => {
+      let { username } = data.singleUser;
+      const res = await app.inject({
+        method: 'DELETE',
+        url: endpoints.deleteUser + `/${username}`
+      });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body).toBeUndefined();
+    });
+
+    test('should return 400 on post-delete fetch', async () => {
+      let { username } = data.singleUser;
+      const res = await app.inject({
+        method: 'GET',
+        url: endpoints.fetchOneUser + `/${username}`
+      });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body).toBeUndefined();
+    });
+
+    test('should not have user in post-delete fetch', async () => {
+      let { username } = data.singleUser;
+      const res = await app.inject({
+        method: 'GET',
+        url: endpoints.fetchAllUsers
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBeDefined();
+
+      let { docs } = JSON.parse(res.body);
+
+      let userInFetchedDocs = docs.some((doc) => doc.username === username);
+      expect(userInFetchedDocs).toBe(false);
+    });
+  });
+
+  describe('Multiple users', () => {
+    test('should return 403', async () => {
+      let { multiUser } = data;
+      const res = await app.inject({
+        method: 'DELETE',
+        url: endpoints.deleteUser,
+        body: JSON.stringify(multiUser)
+      });
+
+      expect(res.statusCode).toBe(403);
+      expect(res.body).toBeUndefined();
+    });
+  });
 });
 
 /*

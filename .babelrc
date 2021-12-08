@@ -1,0 +1,15 @@
+{
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "targets": {
+          "node": "15"
+        }
+      }
+    ],
+    "@babel/preset-typescript",
+    "minify"
+  ],
+  "comments": false
+}

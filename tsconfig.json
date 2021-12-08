@@ -4,7 +4,11 @@
   ],
   "exclude": [
     "node_modules",
-    "./lib/**/*"
+    "./lib/**/*",
+    "./rethink",
+    "./autoeval",
+    "./structure",
+    "./words"
   ],
   "compilerOptions": {
     "target": "es5",

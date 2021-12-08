@@ -8,12 +8,21 @@ const db = require(join(__dirname, '..', '..', 'lib', 'orm'));
 const { singleQuiz } = require('../data/quiz-data');
 const { singleUser } = require('../data/user-data');
 
+describe('Fetch quizzes', () => {
+  describe('Without username', () => {
+    test('should return 400', async () => {});
+  });
+  describe('Without existing user', () => {
+    test('should return 404', async () => {});
+  });
+});
+
 describe('Fetch before user creation', () => {});
 describe('Fetch after user creation', () => {});
 describe('Fetch before creation', () => {});
 
 describe('Create quiz', () => {
-  test('should return ')
+  test('should return ');
 });
 
 // beforeAll(() => {
@@ -22,11 +31,10 @@ describe('Create quiz', () => {
 
 test('Create Quiz without loing', async function () {
   const res = await app.inject({
-    method:'POST',
+    method: 'POST',
     url: '/api/v1/quiz',
     body: singleQuiz
   });
-
 });
 
 test('Create Quiz with login', async function () {
@@ -34,7 +42,7 @@ test('Create Quiz with login', async function () {
   let { username, password } = singleUser;
   await app.inject({
     method: 'PUT',
-    url:`/api/v1/user/${username}/_login`,
+    url: `/api/v1/user/${username}/_login`,
     body: { password }
   });
   // Create Quiz record
@@ -53,7 +61,7 @@ test('Create Quiz with login', async function () {
   expect(body.username).not.toBeNull();
 });
 
-test("List all quizzes", async function () {
+test('List all quizzes', async function () {
   const res = await app.inject({
     method: 'GET',
     url: '/api/v1/quiz'

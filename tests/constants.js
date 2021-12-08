@@ -9,7 +9,9 @@ const {
   userWithoutEmail,
   userWithoutPassword,
   updatedSingleUser,
-  userWithChangedUsername
+  userWithChangedUsername,
+  singleQuiz,
+  quizWithUsernameBypass
 } = require('./raw_data');
 
 module.exports = {
@@ -32,5 +34,19 @@ module.exports = {
       userWithChangedUsername
     },
     cookieId: '_sessionId'
+  },
+  quiz: {
+    endpoints: {
+      fetchAllQuizzes: '/api/v1/quiz',
+      fetchOneQuiz: '/api/v1/quiz/{threeWords}',
+      createQuiz: '/api/v1/quiz',
+      updateQuiz: '/api/v1/quiz',
+      deleteQuiz: '/api/v1/quiz',
+      cacheQuiz: '/api/v1/quiz'
+    },
+    data: {
+      singleQuiz,
+      quizWithUsernameBypass
+    }
   }
 };

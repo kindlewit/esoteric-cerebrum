@@ -62,6 +62,27 @@ let userWithChangedUsername = {
   email: 'user1@test.com'
 };
 
+let singleQuiz = {
+  title: "Test Quiz 1",
+  description: "Test Quiz description Lorem ipsum dolor sit amet",
+  start_time: 1643820622000,
+  config: {
+    file_upload: true,
+    duration: 3.6e6
+  }
+};
+
+let quizWithUsernameBypass = {
+  title: "Test Quiz 2",
+  description: "Lorem ipsum dolor sit amet",
+  start_time: 1642420622000,
+  config: {
+    file_upload: true,
+    duration: 3.6e6
+  },
+  username: "faker_user"
+};
+
 module.exports = {
   singleUser,
   multiUsers,
@@ -69,5 +90,7 @@ module.exports = {
   userWithoutPassword,
   userWithoutEmail,
   updatedSingleUser,
-  userWithChangedUsername
+  userWithChangedUsername,
+  singleQuiz,
+  quizWithUsernameBypass
 };

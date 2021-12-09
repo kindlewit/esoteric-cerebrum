@@ -1,5 +1,5 @@
 /**
- * Simple unit tests for all /user API endpoints
+ * Unit tests for all /user API endpoints
  */
 const { join } = require('path');
 const { describe, test, expect } = global;
@@ -65,10 +65,11 @@ describe('Fetch users', () => {
 describe('Pure user creation', () => {
   describe('Single user', () => {
     test('should return 201 with valid schema', async () => {
+      let { firstUser } = data;
       const res = await app.inject({
         method: 'POST',
         url: endpoints.createUser,
-        body: JSON.stringify(data.singleUser)
+        body: JSON.stringify(firstUser)
       });
 
       expect(res.statusCode).toBe(201);
@@ -78,15 +79,16 @@ describe('Pure user creation', () => {
 
       expect(body.username).toBeDefined(); // Username should be present
       expect(body.username).not.toBeNull();
-      expect(body.username.equals(data.createUser.username)).toBe(true); // Same as request
+      expect(body.username.equals(firstUser.username)).toBe(true); // Same as request
       expect(body.password).toBeUndefined(); // Password should not be present
     });
 
     test('should return 403 on duplication', async () => {
+      let { firstUser } = data;
       const res = await app.inject({
         method: 'POST',
         url: endpoints.createUser,
-        body: JSON.stringify(data.singleUser)
+        body: JSON.stringify(firstUser)
       });
 
       expect(res.statusCode).toBe(403);
@@ -94,10 +96,10 @@ describe('Pure user creation', () => {
     });
 
     test('should return 200 & user on post-create fetch', async () => {
-      let { singleUser } = data;
+      let { firstUser } = data;
       const res = await app.inject({
         method: 'GET',
-        url: endpoints.fetchOneUser + `/${singleUser.username}`
+        url: endpoints.fetchOneUser + `/${firstUser.username}`
       });
 
       expect(res.statusCode).toBe(200);
@@ -108,17 +110,18 @@ describe('Pure user creation', () => {
 
       expect(body.username).toBeDefined();
       expect(body.username).not.toBeNull();
-      expect(body.username.equals(singleUser.username)).toBe(true);
+      expect(body.username.equals(firstUser.username)).toBe(true);
       expect(body.password).toBeUndefined();
     });
   });
 
   describe('Multiple users', () => {
     test('should return 400', async () => {
+      let { multiUser } = data;
       const res = await app.inject({
         method: 'POST',
         url: endpoints.createUser,
-        body: JSON.stringify(data.multiUser)
+        body: JSON.stringify(multiUser)
       });
 
       expect(res.statusCode).toBe(400);
@@ -130,10 +133,11 @@ describe('Pure user creation', () => {
 describe('Impure user creation', () => {
   describe('Without username', () => {
     test('should return 400 without body', async () => {
+      let { userWithoutUsername } = data;
       const res = await app.inject({
         method: 'POST',
         url: endpoints.createUser,
-        body: JSON.stringify(data.userWithoutUsername)
+        body: JSON.stringify(userWithoutUsername)
       });
 
       expect(res.statusCode).toBe(400);
@@ -143,10 +147,11 @@ describe('Impure user creation', () => {
 
   describe('Without email', () => {
     test('should return 400 without body', async () => {
+      let { userWithoutEmail } = data;
       const res = await app.inject({
         method: 'POST',
         url: endpoints.createUser,
-        body: JSON.stringify(data.userWithoutEmail)
+        body: JSON.stringify(userWithoutEmail)
       });
 
       expect(res.statusCode).toBe(400);
@@ -156,10 +161,11 @@ describe('Impure user creation', () => {
 
   describe('Without password', () => {
     test('should return 400 without body', async () => {
+      let { userWithoutPassword } = data;
       const res = await app.inject({
         method: 'POST',
         url: endpoints.createUser,
-        body: JSON.stringify(data.userWithoutPassword)
+        body: JSON.stringify(userWithoutPassword)
       });
 
       expect(res.statusCode).toBe(400);
@@ -220,8 +226,8 @@ describe('Fetch users', () => {
       let body = JSON.parse(res.body);
       let { docs } = body;
 
-      let userPresentInDocs = docs.some(
-        ({ username }) => username === data.singleUser.username
+      let userPresentInDocs = docs.some(({ username }) =>
+        data.firstUser.username.equals(username)
       );
       expect(userPresentInDocs).toBe(true);
     });
@@ -231,11 +237,11 @@ describe('Fetch users', () => {
 describe('Update users', () => {
   describe('Single update', () => {
     test('should return 200 with change', async () => {
-      let { updatedSingleUser } = data;
+      let { updatedFirstUser } = data;
       const res = await app.inject({
         method: 'PATCH',
-        url: endpoints.updateUser + `/${updatedSingleUser.username}`,
-        body: JSON.stringify(updatedSingleUser)
+        url: endpoints.updateUser + `/${updatedFirstUser.username}`,
+        body: JSON.stringify(updatedFirstUser)
       });
 
       expect(res.statusCode).toBe(200);
@@ -243,16 +249,16 @@ describe('Update users', () => {
 
       let body = JSON.parse(res.body);
 
-      expect(body.display_name === updatedSingleUser.display_name);
+      expect(body.display_name === updatedFirstUser.display_name);
     });
   });
 
   describe('Username change', () => {
     test('should return 403', async () => {
-      let { singleUser, userWithChangedUsername } = data;
+      let { firstUser, userWithChangedUsername } = data;
       const res = await app.inject({
         method: 'PATCH',
-        url: endpoints.updateUser + `/${singleUser.username}`,
+        url: endpoints.updateUser + `/${firstUser.username}`,
         body: JSON.stringify(userWithChangedUsername)
       });
 
@@ -301,11 +307,11 @@ describe('Login user', () => {
   });
 
   test('should return 401 on wrong credentials', async () => {
-    let { singleUser } = data;
+    let { firstUser } = data;
     const res = await app.inject({
       method: 'PUT',
       url: endpoints.loginUser,
-      body: JSON.stringify(singleUser)
+      body: JSON.stringify(firstUser)
     });
 
     expect(res.statusCode).toBe(401);
@@ -313,7 +319,7 @@ describe('Login user', () => {
   });
 
   test('should return 200 on proper login', async () => {
-    let { username, password } = data.updatedSingleUser;
+    let { username, password } = data.updatedFirstUser;
     const res = await app.inject({
       method: 'PUT',
       url: endpoints.loginUser,
@@ -325,7 +331,7 @@ describe('Login user', () => {
   });
 
   test('should return valid cookie on login', async () => {
-    let { username, password } = data.updatedSingleUser;
+    let { username, password } = data.updatedFirstUser;
     const res = await app.inject({
       method: 'PUT',
       url: endpoints.loginUser,
@@ -342,7 +348,7 @@ describe('Login user', () => {
 describe('Delete users', () => {
   describe('Single User', () => {
     test('should return 204', async () => {
-      let { username } = data.singleUser;
+      let { username } = data.firstUser;
       const res = await app.inject({
         method: 'DELETE',
         url: endpoints.deleteUser + `/${username}`
@@ -353,7 +359,7 @@ describe('Delete users', () => {
     });
 
     test('should return 400 on retry', async () => {
-      let { username } = data.singleUser;
+      let { username } = data.firstUser;
       const res = await app.inject({
         method: 'DELETE',
         url: endpoints.deleteUser + `/${username}`
@@ -364,7 +370,7 @@ describe('Delete users', () => {
     });
 
     test('should return 400 on post-delete fetch', async () => {
-      let { username } = data.singleUser;
+      let { username } = data.firstUser;
       const res = await app.inject({
         method: 'GET',
         url: endpoints.fetchOneUser + `/${username}`
@@ -375,7 +381,7 @@ describe('Delete users', () => {
     });
 
     test('should not have user in post-delete fetch', async () => {
-      let { username } = data.singleUser;
+      let { username } = data.firstUser;
       const res = await app.inject({
         method: 'GET',
         url: endpoints.fetchAllUsers

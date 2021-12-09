@@ -1,5 +1,5 @@
 /**
- * Simple unit tests for all /quiz API endpoints
+ * Unit tests for all /quiz API endpoints
  */
 const { join } = require('path');
 
@@ -7,10 +7,24 @@ const app = require(join(__dirname, '..', '..', 'lib', 'app'));
 // const db = require(join(__dirname, '..', '..', 'lib', 'orm'));
 
 const { endpoints, data } = require('../constants').quiz;
-const { updatedSingleUser, endpoints: userEndpoints } =
-  require('../constants').user;
+const {
+  updatedFirstUser,
+  secondUser,
+  endpoints: userEndpoints
+} = require('../constants').user;
 
-describe('Fetch all quizzes', () => {
+var THREE_WORDS, EMPTY_THREE_WORDS;
+
+function getLoginCookieFor(userObject) {
+  const loginRes = await app.inject({
+    method: 'PUT',
+    url: userEndpoints.loginUser,
+    body: JSON.stringify(userObject)
+  });
+  return loginRes?.headers?.cookie ?? null;
+}
+
+describe('Fetch quizzes', () => {
   describe('Before creation', () => {
     test('should return 200', async () => {
       const res = await app.inject({
@@ -56,8 +70,18 @@ describe('Fetch all quizzes', () => {
       expect(docs.length).toBe(0);
     });
   });
-  describe('Without existing user', () => {
-    test('should return 404', async () => {});
+
+  describe('Quiz which does not exist', () => {
+    test('should return 400', async () => {
+      let randomQuizId = (Math.random() + 1).toString(36).substring(3);
+      const res = await app.inject({
+        method: 'GET',
+        url: endpoints.fetchOneQuiz.replace('{threeWords}', randomQuizId)
+      });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body).toBeUndefined();
+    });
   });
 });
 
@@ -74,31 +98,10 @@ describe('Create quiz', () => {
     });
   });
 
-  describe('Proper creation flow', () => {
-    test('should return 200 on login', async () => {
-      const log = await app.inject({
-        method: 'PATCH',
-        url: userEndpoints.loginUser,
-        body: JSON.stringify(updatedSingleUser)
-      });
-
-      expect(log.statusCode).toBe(200); // Quick login check
-      expect(log.headers).not.toBeNull();
-      expect(log.headers.cookie).toBeDefined();
-    });
-
-    test('should return 201', async () => {
-      // Login
-      const log = await app.inject({
-        method: 'PATCH',
-        url: userEndpoints.loginUser,
-        body: JSON.stringify(updatedSingleUser)
-      });
-
-      expect(log.headers).not.toBeNull();
-      expect(log.headers.cookie).toBeDefined();
-
-      let { cookie } = log.headers;
+  describe('Happy path', () => {
+    test('should return 201 with data in body', async () => {
+      let { updatedFirstUser } = data;
+      let tempCookie = getLoginCookieFor(updatedFirstUser); // Login
 
       // Create request
       let { singleQuiz } = data;
@@ -106,7 +109,34 @@ describe('Create quiz', () => {
         method: 'POST',
         url: endpoints.createQuiz,
         body: JSON.stringify(singleQuiz),
-        cookies: cookie
+        cookies: tempCookie
+      });
+
+      expect(res.statusCode).toBe(201);
+      expect(res.body).toBeDefined();
+      expect(res.body).not.toBeNull();
+
+      let body = JSON.parse(res.body);
+
+      expect(body.three_words).toBeDefined();
+      expect(body.three_words).not.toBeNull();
+
+      expect(body.username.equals(updatedFirstUser.username)).toBe(true);
+      expect(body.title.equals(singleQuiz.title)).toBe(true);
+      expect(body.description.equals(singleQuiz.description)).toBe(true);
+
+      THREE_WORDS = body.three_words; // setting constant for further tests
+    });
+
+    test('should return 200 on post-create fetch', async () => {
+      /**
+       * Login is not necessary as it's a fetch call.
+       * Create is not necessary as we have constant THREE_WORDS set
+       */
+      let { singleQuiz } = data;
+      const res = await app.inject({
+        method: 'GET',
+        url: endpoints.fetchOneQuiz.replace('{threeWords}', THREE_WORDS)
       });
 
       expect(res.statusCode).toBe(200);
@@ -116,11 +146,97 @@ describe('Create quiz', () => {
       let body = JSON.parse(res.body);
 
       expect(body.three_words).toBeDefined();
-      expect(body.three_words).not.toBeNull();
+      expect(THREE_WORDS.equals(body.three_words)).toBe(true);
 
-      expect(body.username.equals(updatedSingleUser.username)).toBe(true);
-      expect(body.title.equals(singleQuiz.title)).toBe(true);
-      expect(body.description.equals(singleQuiz.description)).toBe(true);
+      expect(body.title).toBeDefined();
+      expect(body.title).not.toBeNull();
+      expect(singleQuiz.title.equals(body.title)).toBe(true);
+    });
+
+    test('should return data on fetch all', async () => {
+      let { singleQuiz } = data;
+      const res = await app.inject({
+        method: 'GET',
+        url: endpoints.fetchAllQuizzes
+      });
+
+      let { total_docs, docs } = JSON.parse(res.body);
+
+      expect(total_docs).toBeGreaterThan(0);
+      let quizIsInFetchData = docs.some(
+        (doc) =>
+          doc.title.equals(singleQuiz.title) &&
+          doc.three_words.equals(THREE_WORDS)
+      );
+      expect(quizIsInFetchData).toBe(true);
+    });
+  });
+
+  describe('Send empty data', () => {
+    test('should return 201', async () => {
+      let tempCookie = getLoginCookieFor(secondUser);
+      const res = await app.inject({
+        method: 'POST',
+        url: endpoints.createQuiz,
+        body: JSON.stringify({}),
+        cookies: tempCookie
+      });
+
+      expect(res.statusCode).toBe(201);
+      expect(res.body).toBeDefined();
+
+      let { three_words, title, start } = JSON.parse(res.body);
+
+      expect(three_words).toBeDefined();
+      expect(three_words).not.toBeNull();
+
+      expect(title).toBeDefined();
+      expect(title).not.toBeNull();
+
+      expect(title.equals(three_words)).toBe(true);
+
+      expect(new Date(start).valueOf()).toBeGreaterThan(
+        new Date().valueOf() + 8.64e7
+      ); // start time is after now + 24hrs
+    });
+
+    test('should return data on fetch', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: endpoints.fetchOneQuiz.replace('{threeWords}', EMPTY_THREE_WORDS)
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBeDefined();
+
+      let { three_words, title, start } = JSON.parse(res.body);
+
+      expect(three_words).toBeDefined();
+      expect(three_words).not.toBeNull();
+      expect(title).toBeDefined();
+      expect(title).not.toBeNull();
+      expect(title.equals(three_words)).toBe(true);
+
+      expect(new Date(start).valueOf()).toBeGreaterThan(
+        new Date().valueOf() + 8.64e7
+      ); // start time is now + 24hrs
+    });
+
+    test('should return data on fetch all', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: endpoints.fetchAllQuizzes
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBeDefined();
+
+      let { docs } = JSON.parse(body);
+
+      let emptyQuizInDocs = docs.some((doc) =>
+        doc.three_words.equals(EMPTY_THREE_WORDS)
+      );
+      expect(emptyQuizInDocs).toBe(true);
     });
   });
 });
@@ -162,7 +278,7 @@ describe('Create impure quiz', () => {
       const log = await app.inject({
         method: 'PATCH',
         url: userEndpoints.loginUser,
-        body: JSON.stringify(updatedSingleUser)
+        body: JSON.stringify(updatedFirstUser)
       });
 
       expect(log.headers).not.toBeNull();
@@ -184,6 +300,262 @@ describe('Create impure quiz', () => {
   });
 });
 
-// beforeAll(() => {
-//   return db.quiz.destroy({ truncate: { cascade: true } });
-// });
+describe('Update quiz', () => {
+  describe('Without login', () => {
+    test('should return 401', async () => {
+      let { updatedSingleQuiz } = data;
+      const res = await app.inject({
+        method: 'PATCH',
+        url: endpoints.updateQuiz,
+        body: JSON.stringify(updatedSingleQuiz)
+      });
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body).toBeUndefined();
+    });
+  });
+
+  describe('With login', () => {
+    test('should return 200 with updated data', async () => {
+      let { updatedSingleQuiz } = data;
+      let tempCookie = getLoginCookieFor(updatedFirstUser);
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: endpoints.updateQuiz.replace('{threeWords}', THREE_WORDS),
+        body: JSON.stringify(updatedSingleQuiz),
+        cookies: tempCookie
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBeDefined();
+      expect(res.body).not.toBeNull();
+
+      let body = JSON.parse(res.body);
+
+      expect(body.title.equals(updatedSingleQuiz.title)).toBe(true);
+      expect(body.description.equals(updatedSingleQuiz.description)).toBe(true);
+    });
+  });
+
+  describe('Change username of quiz', () => {
+    test('should return 401 irrespective of login', async () => {
+      let { quizWithUsernameBypass } = data;
+      let tempCookie = getLoginCookieFor(updatedFirstUser);
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: endpoints.updateQuiz.replace('{threeWords}', THREE_WORDS),
+        body: JSON.stringify(quizWithUsernameBypass),
+        cookies: tempCookie
+      });
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body).toBeUndefined();
+    });
+  });
+
+  describe('Move state', () => {
+    test('should return 200 with updated data', async () => {
+      let { quizWithStateChange } = data;
+      let tempCookie = getLoginCookieFor(updatedFirstUser);
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: endpoints.updateQuiz.replace('{threeWords}', THREE_WORDS),
+        body: JSON.stringify(quizWithStateChange),
+        cookies: tempCookie
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBeDefined();
+
+      let { status } = JSON.parse(res.body);
+
+      expect(status === quizWithStateChange.status).toBe(true);
+    });
+
+    test('should return modified data on post-update fetch', async () => {});
+  });
+
+  describe('Change three_words of quiz', () => {
+    test('should return 200 with old three_words', async () => {
+      let { quizWithThreeWordChange } = data;
+      let tempCookie = getLoginCookieFor(updatedFirstUser);
+      const res = await app.inject({
+        method: 'PATCH',
+        url: endpoints.updateQuiz.replace('{threeWords}', THREE_WORDS),
+        body: JSON.stringify(quizWithThreeWordChange),
+        cookies: tempCookie
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBeDefined();
+
+      let { three_words } = JSON.parse(res.body);
+
+      expect(three_words.equals(quizWithThreeWordChange.three_words)).toBe(
+        false
+      );
+      expect(three_words.equals(THREE_WORDS)).toBe(true);
+    });
+
+    test('should return 400 on post-update fetch', async () => {
+      let { quizWithThreeWordChange } = data;
+      const res = await app.inject({
+        method: 'GET',
+        url: endpoints.fetchOneQuiz.replace(
+          '{threeWords}',
+          quizWithThreeWordChange.three_words
+        )
+      });
+      expect(res.statusCode).toBe(400);
+      expect(res.body).toBeUndefined();
+    });
+
+    test('should not return data with changed three_words', async () => {
+      let { quizWithThreeWordChange } = data;
+      const res = await app.inject({
+        method: 'GET',
+        url: endpoints.fetchAllQuizzes
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBeDefined();
+
+      let { docs } = JSON.parse(body);
+
+      let modified3wrdInFetchData = docs.some((doc) =>
+        doc.three_words.equals(quizWithThreeWordChange.three_words)
+      );
+      expect(modified3wrdInFetchData).toBe(false);
+
+      let threeWordRemainedUnchanged = docs.some((doc) =>
+        doc.three_words.equals(THREE_WORDS)
+      );
+      expect(threeWordRemainedUnchanged).toBe(true);
+    });
+  });
+
+  describe('Send empty data', () => {
+    test('should return 400', async () => {
+      let tempCookie = getLoginCookieFor(secondUser);
+      const res = await app.inject({
+        method: 'PATCH',
+        url: endpoints.fetchOneQuiz.replace('{threeWords}', EMPTY_THREE_WORDS),
+        body: JSON.stringify({}),
+        cookies: tempCookie
+      });
+      expect(res.statusCode).toBe(400);
+      expect(res.body).toBeUndefined();
+    });
+  });
+});
+
+describe('Delete quiz', () => {
+  describe('Without login', () => {
+    test('should return 401', async () => {
+      const res = await app.inject({
+        method: 'DELETE',
+        url: endpoints.deleteQuiz.replace('{threeWords}', THREE_WORDS)
+      });
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body).toBeUndefined();
+    });
+  });
+
+  describe('With array of three_words', () => {
+    test('should return 400', async () => {
+      const res = await app.inject({
+        method: 'DELETE',
+        url: endpoints.deleteQuiz,
+        body: JSON.stringify([THREE_WORDS, EMPTY_THREE_WORDS])
+      });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body).toBeUndefined();
+    });
+  });
+
+  describe('With array of objects', () => {
+    test('should return 400', async () => {
+      const res = await app.inject({
+        method: 'DELETE',
+        url: endpoints.deleteQuiz,
+        body: JSON.stringify([
+          { three_words: THREE_WORDS },
+          { three_words, EMPTY_THREE_WORDS }
+        ])
+      });
+
+      expect(res.statusCode).toBe();
+      expect(res.body).toBeUndefined();
+    });
+  });
+
+  describe('With login for different user quiz', () => {
+    test('should return 401', async () => {
+      let tempCookie = getLoginCookieFor(secondUser);
+
+      const res = await app.inject({
+        method: 'DELETE',
+        url: endpoints.deleteQuiz.replace('{threeWords}', THREE_WORDS),
+        cookies: tempCookie
+      });
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body).toBeUndefined();
+    });
+  });
+
+  describe('Happy path', () => {
+    test('should return 204', async () => {
+      let tempCookie = getLoginCookieFor(firstUser);
+
+      const res = await app.inject({
+        method: 'DELETE',
+        url: endpoints.deleteQuiz.replace('{threeWords}', THREE_WORDS),
+        cookies: tempCookie
+      });
+
+      expect(res.statusCode).toBe(204);
+      expect(res.body).toBeUndefined();
+    });
+
+    test('should return 400 on post-delete fetch', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: endpoints.fetchOneQuiz.replace('{threeWords}', THREE_WORDS)
+      });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body).toBeUndefined();
+    });
+
+    test('should not return data on fetch all', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: endpoints.fetchOneQuiz.replace('{threeWords}', THREE_WORDS)
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBeDefined();
+
+      let { docs } = JSON.parse(res.body);
+
+      let deletedDocInFetchData = docs.some((doc) =>
+        doc.three_words.equals(THREE_WORDS)
+      );
+      expect(deletedDocInFetchData).toBe(false);
+    });
+  });
+});
+
+describe('Cache user', () => {});
+
+/*
+test('', async() => { const res = await app.inject({ method: , url: }); });
+
+beforeAll(() => {
+  return db.quiz.destroy({ truncate: { cascade: true } });
+});
+*/

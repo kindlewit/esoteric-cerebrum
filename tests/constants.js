@@ -3,15 +3,19 @@
  */
 
 const {
-  singleUser,
+  firstUser,
+  secondUser,
   multiUsers,
   userWithoutUsername,
   userWithoutEmail,
   userWithoutPassword,
-  updatedSingleUser,
+  updatedFirstUser,
   userWithChangedUsername,
   singleQuiz,
-  quizWithUsernameBypass
+  quizWithUsernameBypass,
+  updatedSingleQuiz,
+  quizWithStateChange,
+  quizWithThreeWordChange
 } = require('./raw_data');
 
 module.exports = {
@@ -25,12 +29,13 @@ module.exports = {
       deleteUser: '/api/v1/user'
     },
     data: {
-      singleUser,
+      firstUser,
+      secondUser,
       multiUsers,
       userWithoutUsername,
       userWithoutPassword,
       userWithoutEmail,
-      updatedSingleUser,
+      updatedFirstUser,
       userWithChangedUsername
     },
     cookieId: '_sessionId'
@@ -40,13 +45,17 @@ module.exports = {
       fetchAllQuizzes: '/api/v1/quiz',
       fetchOneQuiz: '/api/v1/quiz/{threeWords}',
       createQuiz: '/api/v1/quiz',
-      updateQuiz: '/api/v1/quiz',
-      deleteQuiz: '/api/v1/quiz',
+      updateQuiz: '/api/v1/quiz/{threeWords}',
+      deleteQuiz: '/api/v1/quiz/{threeWords}',
+      deleteMultipleQuiz: '/api/v1/quiz',
       cacheQuiz: '/api/v1/quiz'
     },
     data: {
       singleQuiz,
-      quizWithUsernameBypass
+      quizWithUsernameBypass,
+      updatedSingleQuiz,
+      quizWithStateChange,
+      quizWithThreeWordChange
     }
   }
 };

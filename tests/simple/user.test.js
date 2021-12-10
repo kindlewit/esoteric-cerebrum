@@ -21,6 +21,7 @@ describe('Fetch users', () => {
         method: 'GET',
         url: endpoints.fetchAllUsers
       });
+
       expect(res.statusCode).toBe(200);
     });
 
@@ -35,7 +36,6 @@ describe('Fetch users', () => {
       expect(total_docs).toBeDefined();
       expect(total_docs).not.toBeNull();
       expect(Number.isFinite(total_docs)).toBe(true);
-
       expect(docs).not.toBeNull();
       expect(docs).toBeDefined();
       expect(Array.isArray(docs)).toBe(true);
@@ -53,7 +53,6 @@ describe('Fetch users', () => {
       expect(total_docs).not.toBeNull();
       expect(Number.isFinite(total_docs)).toBe(true);
       expect(total_docs).toBe(0);
-
       expect(docs).not.toBeNull();
       expect(docs).toBeDefined();
       expect(Array.isArray(docs)).toBe(true);
@@ -66,6 +65,7 @@ describe('Pure user creation', () => {
   describe('Single user', () => {
     test('should return 201 with valid schema', async () => {
       let { firstUser } = data;
+
       const res = await app.inject({
         method: 'POST',
         url: endpoints.createUser,
@@ -85,6 +85,7 @@ describe('Pure user creation', () => {
 
     test('should return 403 on duplication', async () => {
       let { firstUser } = data;
+
       const res = await app.inject({
         method: 'POST',
         url: endpoints.createUser,
@@ -96,10 +97,11 @@ describe('Pure user creation', () => {
     });
 
     test('should return 200 & user on post-create fetch', async () => {
-      let { firstUser } = data;
+      let { username } = data.firstUser;
+
       const res = await app.inject({
         method: 'GET',
-        url: endpoints.fetchOneUser + `/${firstUser.username}`
+        url: endpoints.fetchOneUser.replace('{username}', username)
       });
 
       expect(res.statusCode).toBe(200);
@@ -110,7 +112,7 @@ describe('Pure user creation', () => {
 
       expect(body.username).toBeDefined();
       expect(body.username).not.toBeNull();
-      expect(body.username.equals(firstUser.username)).toBe(true);
+      expect(body.username.equals(username)).toBe(true);
       expect(body.password).toBeUndefined();
     });
   });
@@ -118,6 +120,7 @@ describe('Pure user creation', () => {
   describe('Multiple users', () => {
     test('should return 400', async () => {
       let { multiUser } = data;
+
       const res = await app.inject({
         method: 'POST',
         url: endpoints.createUser,
@@ -134,6 +137,7 @@ describe('Impure user creation', () => {
   describe('Without username', () => {
     test('should return 400 without body', async () => {
       let { userWithoutUsername } = data;
+
       const res = await app.inject({
         method: 'POST',
         url: endpoints.createUser,
@@ -148,6 +152,7 @@ describe('Impure user creation', () => {
   describe('Without email', () => {
     test('should return 400 without body', async () => {
       let { userWithoutEmail } = data;
+
       const res = await app.inject({
         method: 'POST',
         url: endpoints.createUser,
@@ -162,6 +167,7 @@ describe('Impure user creation', () => {
   describe('Without password', () => {
     test('should return 400 without body', async () => {
       let { userWithoutPassword } = data;
+
       const res = await app.inject({
         method: 'POST',
         url: endpoints.createUser,
@@ -181,6 +187,7 @@ describe('Fetch users', () => {
         method: 'GET',
         url: endpoints.fetchAllUsers
       });
+
       expect(res.statusCode).toBe(200);
     });
 
@@ -195,7 +202,6 @@ describe('Fetch users', () => {
       expect(total_docs).toBeDefined();
       expect(total_docs).not.toBeNull();
       expect(Number.isFinite(total_docs)).toBe(true);
-
       expect(docs).toBeDefined();
       expect(docs).not.toBeNull();
       expect(Array.isArray(docs)).toBe(true);
@@ -238,9 +244,13 @@ describe('Update users', () => {
   describe('Single update', () => {
     test('should return 200 with change', async () => {
       let { updatedFirstUser } = data;
+
       const res = await app.inject({
         method: 'PATCH',
-        url: endpoints.updateUser + `/${updatedFirstUser.username}`,
+        url: endpoints.updateUser.replace(
+          '{username}',
+          updatedFirstUser.username
+        ),
         body: JSON.stringify(updatedFirstUser)
       });
 
@@ -256,9 +266,10 @@ describe('Update users', () => {
   describe('Username change', () => {
     test('should return 403', async () => {
       let { firstUser, userWithChangedUsername } = data;
+
       const res = await app.inject({
         method: 'PATCH',
-        url: endpoints.updateUser + `/${firstUser.username}`,
+        url: endpoints.updateUser.replace('{username}', firstUser.username),
         body: JSON.stringify(userWithChangedUsername)
       });
 
@@ -270,9 +281,10 @@ describe('Update users', () => {
   describe('Bulk update', () => {
     test('should return 403', async () => {
       let { multiUser } = data;
+
       const res = await app.inject({
         method: 'POST',
-        url: endpoints.updateUser,
+        url: endpoints.updateMultipleUser,
         body: JSON.stringify(multiUser)
       });
 
@@ -296,6 +308,7 @@ describe('Login user', () => {
 
   test('should return 404 on non-existant user', async () => {
     let { userWithoutEmail } = data;
+
     const res = await app.inject({
       method: 'PUT',
       url: endpoints.loginUser,
@@ -308,6 +321,7 @@ describe('Login user', () => {
 
   test('should return 401 on wrong credentials', async () => {
     let { firstUser } = data;
+
     const res = await app.inject({
       method: 'PUT',
       url: endpoints.loginUser,
@@ -320,6 +334,7 @@ describe('Login user', () => {
 
   test('should return 200 on proper login', async () => {
     let { username, password } = data.updatedFirstUser;
+
     const res = await app.inject({
       method: 'PUT',
       url: endpoints.loginUser,
@@ -332,6 +347,7 @@ describe('Login user', () => {
 
   test('should return valid cookie on login', async () => {
     let { username, password } = data.updatedFirstUser;
+
     const res = await app.inject({
       method: 'PUT',
       url: endpoints.loginUser,
@@ -349,9 +365,10 @@ describe('Delete users', () => {
   describe('Single User', () => {
     test('should return 204', async () => {
       let { username } = data.firstUser;
+
       const res = await app.inject({
         method: 'DELETE',
-        url: endpoints.deleteUser + `/${username}`
+        url: endpoints.deleteUser.replace('{username}', username)
       });
 
       expect(res.statusCode).toBe(204);
@@ -360,9 +377,10 @@ describe('Delete users', () => {
 
     test('should return 400 on retry', async () => {
       let { username } = data.firstUser;
+
       const res = await app.inject({
         method: 'DELETE',
-        url: endpoints.deleteUser + `/${username}`
+        url: endpoints.deleteUser.replace('{username}', username)
       });
 
       expect(res.statusCode).toBe(400);
@@ -371,9 +389,10 @@ describe('Delete users', () => {
 
     test('should return 400 on post-delete fetch', async () => {
       let { username } = data.firstUser;
+
       const res = await app.inject({
         method: 'GET',
-        url: endpoints.fetchOneUser + `/${username}`
+        url: endpoints.fetchOneUser.replace('{username}', username)
       });
 
       expect(res.statusCode).toBe(400);
@@ -382,6 +401,7 @@ describe('Delete users', () => {
 
     test('should not have user in post-delete fetch', async () => {
       let { username } = data.firstUser;
+
       const res = await app.inject({
         method: 'GET',
         url: endpoints.fetchAllUsers
@@ -392,7 +412,7 @@ describe('Delete users', () => {
 
       let { docs } = JSON.parse(res.body);
 
-      let userInFetchedDocs = docs.some((doc) => doc.username === username);
+      let userInFetchedDocs = docs.some((doc) => doc.username.equals(username));
       expect(userInFetchedDocs).toBe(false);
     });
   });
@@ -400,9 +420,10 @@ describe('Delete users', () => {
   describe('Multiple users', () => {
     test('should return 403', async () => {
       let { multiUser } = data;
+
       const res = await app.inject({
         method: 'DELETE',
-        url: endpoints.deleteUser,
+        url: endpoints.deleteMultipleUser,
         body: JSON.stringify(multiUser)
       });
 

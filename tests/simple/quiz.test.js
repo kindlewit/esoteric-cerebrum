@@ -10,6 +10,8 @@ const { endpoints, data } = require('../constants').quiz;
 const {
   updatedFirstUser,
   secondUser,
+  thirdUser,
+  userWithoutEmail,
   endpoints: userEndpoints
 } = require('../constants').user;
 
@@ -43,12 +45,12 @@ describe('Fetch quizzes', () => {
       });
 
       expect(res.body).toBeDefined();
+
       let { total_docs, docs } = JSON.parse(req.body);
 
       expect(total_docs).toBeDefined();
       expect(total_docs).not.toBeNull();
       expect(Number.isFinite(total_docs)).toBe(true);
-
       expect(docs).toBeDefined();
       expect(docs).not.toBeNull();
       expect(Array.isArray(docs)).toBe(true);
@@ -60,12 +62,10 @@ describe('Fetch quizzes', () => {
         url: endpoints.fetchAllQuizzes
       });
 
-      expect(res.body).toBeDefined();
       let { total_docs, docs } = JSON.parse(req.body);
 
       expect(Number.isFinite(total_docs)).toBe(true);
       expect(total_docs).toBe(0);
-
       expect(Array.isArray(docs)).toBe(true);
       expect(docs.length).toBe(0);
     });
@@ -74,6 +74,7 @@ describe('Fetch quizzes', () => {
   describe('Quiz which does not exist', () => {
     test('should return 400', async () => {
       let randomQuizId = (Math.random() + 1).toString(36).substring(3);
+
       const res = await app.inject({
         method: 'GET',
         url: endpoints.fetchOneQuiz.replace('{threeWords}', randomQuizId)
@@ -101,10 +102,10 @@ describe('Create quiz', () => {
   describe('Happy path', () => {
     test('should return 201 with data in body', async () => {
       let { updatedFirstUser } = data;
-      let tempCookie = getLoginCookieFor(updatedFirstUser); // Login
+      let tempCookie = await getLoginCookieFor(updatedFirstUser); // Login
+      let { singleQuiz } = data;
 
       // Create request
-      let { singleQuiz } = data;
       const res = await app.inject({
         method: 'POST',
         url: endpoints.createQuiz,
@@ -120,7 +121,6 @@ describe('Create quiz', () => {
 
       expect(body.three_words).toBeDefined();
       expect(body.three_words).not.toBeNull();
-
       expect(body.username.equals(updatedFirstUser.username)).toBe(true);
       expect(body.title.equals(singleQuiz.title)).toBe(true);
       expect(body.description.equals(singleQuiz.description)).toBe(true);
@@ -134,6 +134,7 @@ describe('Create quiz', () => {
        * Create is not necessary as we have constant THREE_WORDS set
        */
       let { singleQuiz } = data;
+
       const res = await app.inject({
         method: 'GET',
         url: endpoints.fetchOneQuiz.replace('{threeWords}', THREE_WORDS)
@@ -147,7 +148,6 @@ describe('Create quiz', () => {
 
       expect(body.three_words).toBeDefined();
       expect(THREE_WORDS.equals(body.three_words)).toBe(true);
-
       expect(body.title).toBeDefined();
       expect(body.title).not.toBeNull();
       expect(singleQuiz.title.equals(body.title)).toBe(true);
@@ -155,6 +155,7 @@ describe('Create quiz', () => {
 
     test('should return data on fetch all', async () => {
       let { singleQuiz } = data;
+
       const res = await app.inject({
         method: 'GET',
         url: endpoints.fetchAllQuizzes
@@ -174,7 +175,8 @@ describe('Create quiz', () => {
 
   describe('Send empty data', () => {
     test('should return 201', async () => {
-      let tempCookie = getLoginCookieFor(secondUser);
+      let tempCookie = await getLoginCookieFor(secondUser);
+
       const res = await app.inject({
         method: 'POST',
         url: endpoints.createQuiz,
@@ -189,12 +191,9 @@ describe('Create quiz', () => {
 
       expect(three_words).toBeDefined();
       expect(three_words).not.toBeNull();
-
       expect(title).toBeDefined();
       expect(title).not.toBeNull();
-
       expect(title.equals(three_words)).toBe(true);
-
       expect(new Date(start).valueOf()).toBeGreaterThan(
         new Date().valueOf() + 8.64e7
       ); // start time is after now + 24hrs
@@ -216,7 +215,6 @@ describe('Create quiz', () => {
       expect(title).toBeDefined();
       expect(title).not.toBeNull();
       expect(title.equals(three_words)).toBe(true);
-
       expect(new Date(start).valueOf()).toBeGreaterThan(
         new Date().valueOf() + 8.64e7
       ); // start time is now + 24hrs
@@ -245,6 +243,7 @@ describe('Create impure quiz', () => {
   describe('Fake cookie', () => {
     test('should return 401', async () => {
       let { singleQuiz } = data;
+
       const res = await app.inject({
         method: 'POST',
         url: endpoints.createQuiz,
@@ -262,6 +261,7 @@ describe('Create impure quiz', () => {
   describe('Bypass username without login', () => {
     test('should return 401', async () => {
       let { quizWithUsernameBypass } = data;
+
       const res = await app.inject({
         method: 'POST',
         url: endpoints.createQuiz,
@@ -285,8 +285,8 @@ describe('Create impure quiz', () => {
       expect(log.headers.cookie).toBeDefined();
 
       let { cookie } = log.headers;
-
       let { quizWithUsernameBypass } = data;
+
       const res = await app.inject({
         method: 'POST',
         url: endpoints.createQuiz,
@@ -304,6 +304,7 @@ describe('Update quiz', () => {
   describe('Without login', () => {
     test('should return 401', async () => {
       let { updatedSingleQuiz } = data;
+
       const res = await app.inject({
         method: 'PATCH',
         url: endpoints.updateQuiz,
@@ -318,7 +319,7 @@ describe('Update quiz', () => {
   describe('With login', () => {
     test('should return 200 with updated data', async () => {
       let { updatedSingleQuiz } = data;
-      let tempCookie = getLoginCookieFor(updatedFirstUser);
+      let tempCookie = await getLoginCookieFor(updatedFirstUser);
 
       const res = await app.inject({
         method: 'PATCH',
@@ -341,7 +342,7 @@ describe('Update quiz', () => {
   describe('Change username of quiz', () => {
     test('should return 401 irrespective of login', async () => {
       let { quizWithUsernameBypass } = data;
-      let tempCookie = getLoginCookieFor(updatedFirstUser);
+      let tempCookie = await getLoginCookieFor(updatedFirstUser);
 
       const res = await app.inject({
         method: 'PATCH',
@@ -358,7 +359,7 @@ describe('Update quiz', () => {
   describe('Move state', () => {
     test('should return 200 with updated data', async () => {
       let { quizWithStateChange } = data;
-      let tempCookie = getLoginCookieFor(updatedFirstUser);
+      let tempCookie = await getLoginCookieFor(updatedFirstUser);
 
       const res = await app.inject({
         method: 'PATCH',
@@ -366,6 +367,7 @@ describe('Update quiz', () => {
         body: JSON.stringify(quizWithStateChange),
         cookies: tempCookie
       });
+
       expect(res.statusCode).toBe(200);
       expect(res.body).toBeDefined();
 
@@ -374,13 +376,28 @@ describe('Update quiz', () => {
       expect(status === quizWithStateChange.status).toBe(true);
     });
 
-    test('should return modified data on post-update fetch', async () => {});
+    test('should return modified data on post-update fetch', async () => {
+      let { quizWithStateChange } = data;
+
+      const res = await app.inject({
+        method: 'GET',
+        url: endpoints.fetchOneQuiz.replace('{threeWords}', THREE_WORDS)
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBeDefined();
+
+      let { status } = JSON.parse(res.body);
+
+      expect(status === quizWithStateChange.status).toBe(true);
+    });
   });
 
   describe('Change three_words of quiz', () => {
     test('should return 200 with old three_words', async () => {
       let { quizWithThreeWordChange } = data;
-      let tempCookie = getLoginCookieFor(updatedFirstUser);
+      let tempCookie = await getLoginCookieFor(updatedFirstUser);
+
       const res = await app.inject({
         method: 'PATCH',
         url: endpoints.updateQuiz.replace('{threeWords}', THREE_WORDS),
@@ -401,6 +418,7 @@ describe('Update quiz', () => {
 
     test('should return 400 on post-update fetch', async () => {
       let { quizWithThreeWordChange } = data;
+
       const res = await app.inject({
         method: 'GET',
         url: endpoints.fetchOneQuiz.replace(
@@ -408,16 +426,19 @@ describe('Update quiz', () => {
           quizWithThreeWordChange.three_words
         )
       });
+
       expect(res.statusCode).toBe(400);
       expect(res.body).toBeUndefined();
     });
 
     test('should not return data with changed three_words', async () => {
       let { quizWithThreeWordChange } = data;
+
       const res = await app.inject({
         method: 'GET',
         url: endpoints.fetchAllQuizzes
       });
+
       expect(res.statusCode).toBe(200);
       expect(res.body).toBeDefined();
 
@@ -427,7 +448,6 @@ describe('Update quiz', () => {
         doc.three_words.equals(quizWithThreeWordChange.three_words)
       );
       expect(modified3wrdInFetchData).toBe(false);
-
       let threeWordRemainedUnchanged = docs.some((doc) =>
         doc.three_words.equals(THREE_WORDS)
       );
@@ -437,13 +457,15 @@ describe('Update quiz', () => {
 
   describe('Send empty data', () => {
     test('should return 400', async () => {
-      let tempCookie = getLoginCookieFor(secondUser);
+      let tempCookie = await getLoginCookieFor(secondUser);
+
       const res = await app.inject({
         method: 'PATCH',
         url: endpoints.fetchOneQuiz.replace('{threeWords}', EMPTY_THREE_WORDS),
         body: JSON.stringify({}),
         cookies: tempCookie
       });
+
       expect(res.statusCode).toBe(400);
       expect(res.body).toBeUndefined();
     });
@@ -494,7 +516,7 @@ describe('Delete quiz', () => {
 
   describe('With login for different user quiz', () => {
     test('should return 401', async () => {
-      let tempCookie = getLoginCookieFor(secondUser);
+      let tempCookie = await getLoginCookieFor(secondUser);
 
       const res = await app.inject({
         method: 'DELETE',
@@ -509,7 +531,7 @@ describe('Delete quiz', () => {
 
   describe('Happy path', () => {
     test('should return 204', async () => {
-      let tempCookie = getLoginCookieFor(firstUser);
+      let tempCookie = await getLoginCookieFor(firstUser);
 
       const res = await app.inject({
         method: 'DELETE',
@@ -550,11 +572,137 @@ describe('Delete quiz', () => {
   });
 });
 
-describe('Cache user', () => {});
+describe('Fetch by username', () => {
+  describe('Non-existant user', () => {
+    test('should return 404', async () => {
+      let { username } = userWithoutEmail; // This user will never be created
+      let url = endpoints.fetchByUser.replace('{username}', username);
+
+      const res = await app.inject({ method: 'GET', url });
+
+      expect(res.statusCode).toBe(404);
+      expect(res.body).toBeUndefined();
+    });
+  });
+
+  describe('Existing user without any quiz', () => {
+    test('should return 200', async () => {
+      let { username } = thirdUser;
+
+      const res = await app.inject({
+        method: 'GET',
+        url: endpoints.fetchByUser.replace('{username}', username)
+      });
+
+      expect(res.statusCode).toBe(200);
+    });
+
+    test('should return data valid to schema', async () => {
+      let { username } = thirdUser;
+
+      const res = await app.inject({
+        method: 'GET',
+        url: endpoints.fetchByUser.replace('{username}', username)
+      });
+
+      expect(res.body).toBeDefined();
+      expect(res.body).not.toBeNull();
+
+      let { total_docs, docs } = JSON.parse(res.body);
+
+      expect(total_docs).toBeDefined();
+      expect(total_docs).not.toBeNull();
+      expect(Number.isFinite(total_docs)).toBe(true);
+      expect(docs).toBeDefined();
+      expect(docs).not.toBeNull();
+      expect(Array.isArray(docs)).toBe(true);
+    });
+
+    test('should return 0 docs', async () => {
+      let { username } = thirdUser;
+
+      const res = await app.inject({
+        method: 'GET',
+        url: endpoints.fetchByUser.replace('{username}', username)
+      });
+
+      let { total_docs, docs } = JSON.parse(res.body);
+
+      expect(total_docs).toBe(0);
+      expect(docs.length).toBe(0);
+    });
+  });
+
+  describe('Existing user with quizzes', () => {
+    test('should return 200', async () => {
+      let { username } = updatedFirstUser;
+
+      const res = await app.inject({
+        method: 'GET',
+        url: endpoints.fetchByUser.replace('{username}', username)
+      });
+
+      expect(res.statusCode).toBe(200);
+    });
+
+    test('should return data valid to schema', async () => {
+      let { username } = updatedFirstUser;
+
+      const res = await app.inject({
+        method: 'GET',
+        url: endpoints.fetchByUser.replace('{username}', username)
+      });
+
+      expect(res.body).toBeDefined();
+      expect(res.body).not.toBeNull();
+
+      let { total_docs, docs } = JSON.parse(res.body);
+
+      expect(total_docs).toBeDefined();
+      expect(total_docs).not.toBeNull();
+      expect(Number.isFinite(total_docs)).toBe(true);
+      expect(docs).toBeDefined();
+      expect(docs).not.toBeNull();
+      expect(Array.isArray(docs)).toBe(true);
+    });
+
+    test('should return more than 0 docs', async () => {
+      let { username } = updatedFirstUser;
+
+      const res = await app.inject({
+        method: 'GET',
+        url: endpoints.fetchByUser.replace('{username}', username)
+      });
+
+      let { total_docs, docs } = JSON.parse(res.body);
+
+      expect(total_docs).toBeGreaterThan(0);
+      expect(docs.length).toBeGreaterThan(0);
+    });
+
+    test('should return quiz data', async () => {
+      let { username } = updatedFirstUser;
+
+      const res = await app.inject({
+        method: 'GET',
+        url: endpoints.fetchByUser.replace('{username}', username)
+      });
+
+      let { docs } = JSON.parse(body);
+
+      let quizIsInFetchData = docs.some(
+        (doc) =>
+          doc.username.equals(username) && doc.three_words.equals(THREE_WORDS)
+      );
+      expect(quizIsInFetchData).toBe(true);
+    });
+  });
+});
 
 /*
 test('', async() => { const res = await app.inject({ method: , url: }); });
 
+url = url.replace('{date}', new Date().toISOString().slice(0,10).split('-').reverse().join('-'));
 beforeAll(() => {
   return db.quiz.destroy({ truncate: { cascade: true } });
 });

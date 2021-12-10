@@ -2,6 +2,7 @@
  * Unit tests for all /quiz API endpoints
  */
 const { join } = require('path');
+const { describe, test, expect } = global;
 
 const app = require(join(__dirname, '..', '..', 'lib', 'app'));
 // const db = require(join(__dirname, '..', '..', 'lib', 'orm'));
@@ -15,9 +16,9 @@ const {
   endpoints: userEndpoints
 } = require('../constants').user;
 
-var THREE_WORDS, EMPTY_THREE_WORDS;
+let THREE_WORDS, EMPTY_THREE_WORDS;
 
-function getLoginCookieFor(userObject) {
+async function getLoginCookieFor(userObject) {
   const loginRes = await app.inject({
     method: 'PUT',
     url: userEndpoints.loginUser,
@@ -46,7 +47,7 @@ describe('Fetch quizzes', () => {
 
       expect(res.body).toBeDefined();
 
-      let { total_docs, docs } = JSON.parse(req.body);
+      let { total_docs, docs } = JSON.parse(res.body);
 
       expect(total_docs).toBeDefined();
       expect(total_docs).not.toBeNull();
@@ -62,7 +63,7 @@ describe('Fetch quizzes', () => {
         url: endpoints.fetchAllQuizzes
       });
 
-      let { total_docs, docs } = JSON.parse(req.body);
+      let { total_docs, docs } = JSON.parse(res.body);
 
       expect(Number.isFinite(total_docs)).toBe(true);
       expect(total_docs).toBe(0);
@@ -229,7 +230,7 @@ describe('Create quiz', () => {
       expect(res.statusCode).toBe(200);
       expect(res.body).toBeDefined();
 
-      let { docs } = JSON.parse(body);
+      let { docs } = JSON.parse(res.body);
 
       let emptyQuizInDocs = docs.some((doc) =>
         doc.three_words.equals(EMPTY_THREE_WORDS)
@@ -442,7 +443,7 @@ describe('Update quiz', () => {
       expect(res.statusCode).toBe(200);
       expect(res.body).toBeDefined();
 
-      let { docs } = JSON.parse(body);
+      let { docs } = JSON.parse(res.body);
 
       let modified3wrdInFetchData = docs.some((doc) =>
         doc.three_words.equals(quizWithThreeWordChange.three_words)
@@ -505,7 +506,7 @@ describe('Delete quiz', () => {
         url: endpoints.deleteQuiz,
         body: JSON.stringify([
           { three_words: THREE_WORDS },
-          { three_words, EMPTY_THREE_WORDS }
+          { three_words: EMPTY_THREE_WORDS }
         ])
       });
 
@@ -531,7 +532,7 @@ describe('Delete quiz', () => {
 
   describe('Happy path', () => {
     test('should return 204', async () => {
-      let tempCookie = await getLoginCookieFor(firstUser);
+      let tempCookie = await getLoginCookieFor(updatedFirstUser);
 
       const res = await app.inject({
         method: 'DELETE',
@@ -688,7 +689,7 @@ describe('Fetch by username', () => {
         url: endpoints.fetchByUser.replace('{username}', username)
       });
 
-      let { docs } = JSON.parse(body);
+      let { docs } = JSON.parse(res.body);
 
       let quizIsInFetchData = docs.some(
         (doc) =>
@@ -702,7 +703,11 @@ describe('Fetch by username', () => {
 /*
 test('', async() => { const res = await app.inject({ method: , url: }); });
 
-url = url.replace('{date}', new Date().toISOString().slice(0,10).split('-').reverse().join('-'));
+url = url.replace(
+  '{date}', new Date().toISOString()
+  .slice(0,10).split('-')
+  .reverse().join('-')
+);
 beforeAll(() => {
   return db.quiz.destroy({ truncate: { cascade: true } });
 });

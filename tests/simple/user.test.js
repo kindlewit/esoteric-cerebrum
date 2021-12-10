@@ -12,7 +12,6 @@ const { endpoints, data, cookieId } = require(join(
   '..',
   'constants.js'
 )).user;
-const COOKIES = {};
 
 describe('Fetch users', () => {
   describe('Before creation', () => {

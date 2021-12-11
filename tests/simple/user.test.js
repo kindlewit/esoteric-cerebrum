@@ -294,69 +294,76 @@ describe('Update users', () => {
 });
 
 describe('Login user', () => {
-  test('should return 400 on empty request', async () => {
-    const res = await app.inject({
-      method: 'PUT',
-      url: endpoints.loginUser,
-      body: JSON.stringify({})
-    });
+  describe('With empty request', () => {
+    test('should return 400', async () => {
+      const res = await app.inject({
+        method: 'PUT',
+        url: endpoints.loginUser,
+        body: JSON.stringify({})
+      });
 
-    expect(res.statusCode).toBe(400);
-    expect(res.body).toBeUndefined();
+      expect(res.statusCode).toBe(400);
+      expect(res.body).toBeUndefined();
+    });
   });
 
-  test('should return 404 on non-existant user', async () => {
-    let { userWithoutEmail } = data;
+  describe('With non-existant user', () => {
+    test('should return 404 on non-existant user', async () => {
+      let { userWithoutEmail } = data;
 
-    const res = await app.inject({
-      method: 'PUT',
-      url: endpoints.loginUser,
-      body: JSON.stringify(userWithoutEmail)
+      const res = await app.inject({
+        method: 'PUT',
+        url: endpoints.loginUser,
+        body: JSON.stringify(userWithoutEmail)
+      });
+
+      expect(res.statusCode).toBe(404);
+      expect(res.body).toBeUndefined();
     });
-
-    expect(res.statusCode).toBe(404);
-    expect(res.body).toBeUndefined();
   });
 
-  test('should return 401 on wrong credentials', async () => {
-    let { firstUser } = data;
+  describe('With wrong credentials', () => {
+    test('should return 401 on wrong credentials', async () => {
+      let { firstUser } = data;
 
-    const res = await app.inject({
-      method: 'PUT',
-      url: endpoints.loginUser,
-      body: JSON.stringify(firstUser)
+      const res = await app.inject({
+        method: 'PUT',
+        url: endpoints.loginUser,
+        body: JSON.stringify(firstUser)
+      });
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body).toBeUndefined();
     });
-
-    expect(res.statusCode).toBe(401);
-    expect(res.body).toBeUndefined();
   });
+  describe('Happy path', () => {
+    test('should return 200', async () => {
+      let { username, password } = data.updatedFirstUser;
 
-  test('should return 200 on proper login', async () => {
-    let { username, password } = data.updatedFirstUser;
+      const res = await app.inject({
+        method: 'PUT',
+        url: endpoints.loginUser,
+        body: JSON.stringify({ username, password })
+      });
 
-    const res = await app.inject({
-      method: 'PUT',
-      url: endpoints.loginUser,
-      body: JSON.stringify({ username, password })
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBeUndefined();
     });
 
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toBeUndefined();
-  });
+    test('should return valid cookie on login', async () => {
+      let { username, password } = data.updatedFirstUser;
 
-  test('should return valid cookie on login', async () => {
-    let { username, password } = data.updatedFirstUser;
+      const res = await app.inject({
+        method: 'PUT',
+        url: endpoints.loginUser,
+        body: JSON.stringify({ username, password })
+      });
 
-    const res = await app.inject({
-      method: 'PUT',
-      url: endpoints.loginUser,
-      body: JSON.stringify({ username, password })
+      let cookie = res?.headers?.cookie;
+
+      expect(cookie).toBeDefined();
+      expect(cookie).not.toBeNull();
     });
-
-    let cookie = res.getHeader(cookieId);
-
-    expect(cookie).toBeDefined();
-    expect(cookie).not.toBeNull();
   });
 });
 

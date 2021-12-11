@@ -12,5 +12,12 @@ describe('Health checks', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toBeDefined();
+    expect(res.body).not.toBeNull();
+
+    let { healthy } = JSON.parse(res.body);
+
+    expect(healthy).toBeDefined();
+    expect(healthy).not.toBeNull();
+    expect(healthy).toBe(true);
   });
 });

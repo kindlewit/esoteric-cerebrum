@@ -16,3 +16,6 @@ Before running tests, it is necessary to build the project first. So run `npm ru
 In the case of testing a particular module, run:
 
 ```npx jest --coverage [module]```
+
+## Contribution
+As we are following a Test Driven development approach, please ensure all updates meet the appropriate test suite or add the necessary test cases for any new features.

@@ -15,7 +15,17 @@ const {
   quizWithUsernameBypass,
   updatedSingleQuiz,
   quizWithStateChange,
-  quizWithThreeWordChange
+  quizWithThreeWordChange,
+  mcqQuestions,
+  msqQuestions,
+  textQuestions,
+  questionWithoutOptionsWithAnswer,
+  questionWithoutOptionsWithoutAnswer,
+  questionWithoutAnswer,
+  questionWithoutText,
+  questionWithoutFormatWithoutOptions,
+  questionWithoutFormatWithOptions,
+  questionWithoutWeightage
 } = require('./raw_data');
 
 module.exports = {
@@ -60,6 +70,45 @@ module.exports = {
       updatedSingleQuiz,
       quizWithStateChange,
       quizWithThreeWordChange
+    }
+  },
+  question: {
+    endpoints: {
+      generalUrl: '/api/v1/question',
+      specificUrl: '/api/v1/question/{threeWords}',
+      fetchAllQuestions: '/api/v1/question',
+      fetchQuestionsForQuiz: '/api/v1/question/{threeWords}',
+      createQuestionsForQuiz: '/api/v1/question/{threeWords}',
+      updateQuestionsForQuiz: '/api/v1/question/{threeWords}',
+      deleteQuestionsForQuiz: '/api/v1/question/{threeWords}',
+      deleteQuestions: '/api/v1/question'
+    },
+    data: {
+      mcqQuestions,
+      msqQuestions,
+      textQuestions,
+      questionWithoutText,
+      questionWithoutFormatWithoutOptions,
+      questionWithoutFormatWithOptions,
+      questionWithoutWeightage,
+      questionWithoutOptionsWithAnswer,
+      questionWithoutOptionsWithoutAnswer,
+      questionWithoutAnswer
+    },
+    weightageToJson: (arr) => {
+      return arr.map((a) => {
+        a.weightage = { value: a.weightage };
+        return a;
+      });
+    },
+    numbering: (arr) => {
+      for (let i = 0; i < arr.length; i++) {
+        arr[i].number = 1 + i;
+      }
+      return arr;
+    },
+    addData: (arr, d) => {
+      return arr.map((a) => ({ ...a, ...d }));
     }
   }
 };

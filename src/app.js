@@ -7,6 +7,7 @@ import connectRedis from 'connect-redis';
 
 import { client } from './utils/cache-utils';
 import { apiV1Logger } from './utils/logger-utils';
+import diagnosis from './doctor';
 const RedisStore = connectRedis(session);
 const app = fastify({ logger: apiV1Logger });
 
@@ -39,12 +40,6 @@ app.register(require('./routes/user-routes'), { prefix: '/api/v1' });
 // app.register(require('./routes/response-routes'), { prefix: '/api/v1' });
 // app.register(require('./routes/option-routes'), { prefix: '/api/v1' });
 
-app.get('/', (request, reply) => {
-  return reply.code(200).send(
-    JSON.stringify({
-      healthy: true
-    })
-  );
-});
+app.get('/', diagnosis);
 
 export default app;

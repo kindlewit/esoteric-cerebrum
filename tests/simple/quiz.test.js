@@ -122,9 +122,7 @@ describe('Create quiz', () => {
 
       expect(body.three_words).toBeDefined();
       expect(body.three_words).not.toBeNull();
-      expect(body.username.equals(updatedFirstUser.username)).toBe(true);
-      expect(body.title.equals(singleQuiz.title)).toBe(true);
-      expect(body.description.equals(singleQuiz.description)).toBe(true);
+      expect(body).toMatchObject(updatedFirstUser);
 
       THREE_WORDS = body.three_words; // setting constant for further tests
     });
@@ -148,10 +146,11 @@ describe('Create quiz', () => {
       let body = JSON.parse(res.body);
 
       expect(body.three_words).toBeDefined();
-      expect(THREE_WORDS.equals(body.three_words)).toBe(true);
-      expect(body.title).toBeDefined();
+      expect(body.three_words).equals(THREE_WORDS);
+      expect(body).toMatchObject(singleQuiz);
+      expect(body).toHaveProperty('title');
       expect(body.title).not.toBeNull();
-      expect(singleQuiz.title.equals(body.title)).toBe(true);
+      expect(body.title).equals(singleQuiz.title);
     });
 
     test('should return data on fetch all', async () => {
@@ -194,7 +193,7 @@ describe('Create quiz', () => {
       expect(three_words).not.toBeNull();
       expect(title).toBeDefined();
       expect(title).not.toBeNull();
-      expect(title.equals(three_words)).toBe(true);
+      expect(title).equals(three_words);
       expect(new Date(start).valueOf()).toBeGreaterThan(
         new Date().valueOf() + 8.64e7
       ); // start time is after now + 24hrs
@@ -215,7 +214,7 @@ describe('Create quiz', () => {
       expect(three_words).not.toBeNull();
       expect(title).toBeDefined();
       expect(title).not.toBeNull();
-      expect(title.equals(three_words)).toBe(true);
+      expect(title).equals(three_words);
       expect(new Date(start).valueOf()).toBeGreaterThan(
         new Date().valueOf() + 8.64e7
       ); // start time is now + 24hrs
@@ -335,8 +334,9 @@ describe('Update quiz', () => {
 
       let body = JSON.parse(res.body);
 
-      expect(body.title.equals(updatedSingleQuiz.title)).toBe(true);
-      expect(body.description.equals(updatedSingleQuiz.description)).toBe(true);
+      expect(body).toMatchObject(updatedSingleQuiz);
+      expect(body.title).equals(updatedSingleQuiz.title);
+      expect(body.description).equals(updatedSingleQuiz.description);
     });
   });
 
@@ -414,7 +414,7 @@ describe('Update quiz', () => {
       expect(three_words.equals(quizWithThreeWordChange.three_words)).toBe(
         false
       );
-      expect(three_words.equals(THREE_WORDS)).toBe(true);
+      expect(three_words).equals(THREE_WORDS);
     });
 
     test('should return 400 on post-update fetch', async () => {

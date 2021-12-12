@@ -76,6 +76,7 @@ module.exports = {
     endpoints: {
       generalUrl: '/api/v1/question',
       specificUrl: '/api/v1/question/{threeWords}',
+      answersUrl: '/api/v1/question/{threeWords}?answers=true',
       fetchAllQuestions: '/api/v1/question',
       fetchQuestionsForQuiz: '/api/v1/question/{threeWords}',
       createQuestionsForQuiz: '/api/v1/question/{threeWords}',

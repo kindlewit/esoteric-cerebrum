@@ -254,7 +254,7 @@ let questionForMultipleQuiz = [
   },
   {
     three_words: 'def',
-    text:'What is the second question',
+    text: 'What is the second question',
     answer_format: 'text',
     weightage: {
       value: 10

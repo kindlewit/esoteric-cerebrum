@@ -76,13 +76,7 @@ module.exports = {
     endpoints: {
       generalUrl: '/api/v1/question',
       specificUrl: '/api/v1/question/{threeWords}',
-      answersUrl: '/api/v1/question/{threeWords}?answers=true',
-      fetchAllQuestions: '/api/v1/question',
-      fetchQuestionsForQuiz: '/api/v1/question/{threeWords}',
-      createQuestionsForQuiz: '/api/v1/question/{threeWords}',
-      updateQuestionsForQuiz: '/api/v1/question/{threeWords}',
-      deleteQuestionsForQuiz: '/api/v1/question/{threeWords}',
-      deleteQuestions: '/api/v1/question'
+      answersUrl: '/api/v1/question/{threeWords}?answers=true'
     },
     data: {
       mcqQuestions,
@@ -94,7 +88,11 @@ module.exports = {
       questionWithoutWeightage,
       questionWithoutOptionsWithAnswer,
       questionWithoutOptionsWithoutAnswer,
-      questionWithoutAnswer
+      questionWithoutAnswer,
+      extraOptionNonAnswer,
+      extraOptionAnswer,
+      conflictingOpt,
+      questionForMultipleQuiz
     },
     weightageToJson: (arr) => {
       return arr.map((a) => {

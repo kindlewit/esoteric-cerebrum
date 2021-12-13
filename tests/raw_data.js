@@ -225,6 +225,43 @@ let questionWithoutWeightage = {
   answer_format: 'text'
 };
 
+let extraOptionNonAnswer = {
+  character: 'D',
+  text: 'Some Random Text',
+  is_answer: false
+};
+
+let extraOptionAnswer = {
+  character: 'E',
+  text: 'Extra Random Text',
+  is_answer: true
+};
+
+let conflictingOpt = {
+  character: 'A',
+  text: 'Conflicting option',
+  is_answer: true
+};
+
+let questionForMultipleQuiz = [
+  {
+    three_words: 'abc',
+    text: 'What is the first question',
+    answer_format: 'text',
+    weightage: {
+      value: 10
+    }
+  },
+  {
+    three_words: 'def',
+    text:'What is the second question',
+    answer_format: 'text',
+    weightage: {
+      value: 10
+    }
+  }
+];
+
 module.exports = {
   firstUser,
   secondUser,
@@ -248,5 +285,9 @@ module.exports = {
   questionWithoutText,
   questionWithoutFormatWithoutOptions,
   questionWithoutFormatWithOptions,
-  questionWithoutWeightage
+  questionWithoutWeightage,
+  extraOptionNonAnswer,
+  extraOptionAnswer,
+  conflictingOpt,
+  questionForMultipleQuiz
 };

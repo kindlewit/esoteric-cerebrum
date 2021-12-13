@@ -1,6 +1,6 @@
 {
   "name": "esoteric-cerebrum",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Backend logic & API for kindlewit",
   "main": "src/index.js",
   "type": "module",

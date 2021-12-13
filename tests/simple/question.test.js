@@ -736,35 +736,550 @@ describe('Fetch questions', () => {
   });
 });
 
-describe('Update question', () => {
-  describe('With empty data');
-  describe('Re-arranged order');
-  describe('Wrong numbering');
-  describe('Adding options');
-  describe('Adding answers');
-  describe('Removed options');
-  describe('Removed answers');
-  describe('Multiple quizzes');
-  // Happy path
-  describe('Single question');
-  describe('Multiple questions');
+describe('Update question', async () => {
+  let cookies = await getLoginCookieFor(userData.updatedFirstUser);
+
+  describe('With empty data', () => {
+    test('should return 400', async () => {
+      const res = await app.inject({
+        method: 'PATCH',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+        body: JSON.stringify({}),
+        cookies
+      });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body).toBeUndefined();
+    });
+  });
+
+  describe('Wrong numbering', () => {
+    test('should throw 500', async () => {
+      let wronglyNumberedData = addData(data.mcsQuestions, { number: 44 }); // adding fake number
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+        body: JSON.stringify(wronglyNumberedData),
+        cookies
+      });
+
+      expect(res.statusCode).toBe(500); // Due to repeated number key
+      expect(res.body).toBeUndefined();
+    });
+  });
+
+  describe('Adding options', async () => {
+    let { extraOptionNonAnswer } = data;
+
+    const fetch = await app.inject({
+      method: 'GET',
+      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
+    });
+
+    let { docs } = JSON.parse(fetch.body);
+    docs[0] = docs[0].options.push(extraOptionNonAnswer);
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+      body: JSON.stringify(docs),
+      cookies
+    });
+
+    test('should return 200', () => {
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBeDefined();
+    });
+
+    test('should return updated data', () => {
+      let body = JSON.parse(res.body);
+      expect(Array.isArray(body.docs)).toBe(true);
+      expect(body.docs[0]).toMatchObject(docs[0]);
+    });
+  });
+
+  describe('Adding answers', async () => {
+    let { extraOptionAnswer } = data;
+
+    const fetch = await app.inject({
+      method: 'GET',
+      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
+    });
+
+    let { docs } = JSON.parse(fetch.body);
+    docs[0] = docs[0].options.push(extraOptionAnswer);
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+      body: JSON.stringify(docs),
+      cookies
+    });
+
+    test('should return 200', () => {
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBeDefined();
+    });
+
+    test('should return updated data', () => {
+      let body = JSON.parse(res.body);
+      expect(Array.isArray(body.docs)).toBe(true);
+      expect(body.docs[0]).toMatchObject(docs[0]);
+    });
+  });
+
+  describe('Conflicting option', async () => {
+    let { conflictingOpt } = data;
+    const fetch = await app.inject({
+      method: 'GET',
+      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
+    });
+
+    let { docs } = JSON.parse(fetch.body);
+    docs.filter((doc) => doc.answer_format === 'msq')[1].options[0] =
+      conflictingOpt;
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+      body: JSON.stringify(docs),
+      cookies
+    });
+
+    test('should return 200', () => {
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBeDefined();
+    });
+
+    test('should return updated data', () => {
+      let body = JSON.parse(res.body);
+      expect(Array.isArray(body.docs)).toBe(true);
+      let changedOpt = docs.filter((doc) => doc.answer_format === 'msq')[1]
+        .options[0];
+      expect(changedOpt).toMatchObject(conflictingOpt);
+    });
+  });
+
+  describe('Removed options', async () => {
+    const fetch = await app.inject({
+      method: 'GET',
+      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
+    });
+
+    let { docs } = JSON.parse(fetch.body);
+    docs.filter((doc) => doc.answer_format === 'msq')[1].options.pop(); // removing last option in 2nd question
+    let lengthAfterModification = docs.filter(
+      (doc) => doc.answer_format === 'msq'
+    )[1].options.length;
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+      body: JSON.stringify(docs),
+      cookies
+    });
+
+    test('should return 200', () => {
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBeDefined();
+    });
+
+    test('should return updated data', () => {
+      let body = JSON.parse(res.body);
+
+      expect(body).toHaveProperty('docs');
+      let changedOpts = docs.filter((doc) => doc.answer_format === 'msq')[1]
+        .options;
+      expect(changedOpts.length).equals(lengthAfterModification);
+    });
+  });
+
+  describe('Removed answers', async () => {
+    const fetch = await app.inject({
+      method: 'GET',
+      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
+    });
+
+    let { docs } = JSON.parse(fetch.body);
+    docs
+      .filter((doc) => doc.answer_format === 'msq')[2]
+      .options.filter((opt) => opt.is_answer === true)
+      .pop(); // removing last answer in 3rd question
+    let lengthAfterModification = docs.filter(
+      (doc) => doc.answer_format === 'msq'
+    )[2].options.length;
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+      body: JSON.stringify(docs),
+      cookies
+    });
+
+    test('should return 200', () => {
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBeDefined();
+    });
+
+    test('should return updated data', () => {
+      let body = JSON.parse(res.body);
+
+      expect(body).toHaveProperty('docs');
+      let changedOpts = docs.filter((doc) => doc.answer_format === 'msq')[1]
+        .options;
+      expect(changedOpts.length).equals(lengthAfterModification);
+    });
+  });
+
+  describe('Multiple quizzes', () => {
+    test('should return 400', async () => {
+      let { questionForMultipleQuiz } = data;
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: endpoints.generalUrl,
+        body: JSON.stringify(questionForMultipleQuiz),
+        cookies
+      });
+    });
+  });
+
+  describe('Re-arranged order', async () => {
+    const fetch = await app.inject({
+      method: 'GET',
+      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
+    });
+
+    let { docs } = JSON.parse(fetch.body);
+    docs = docs.map((doc) => delete doc.number).reverse();
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+      body: JSON.stringify(docs),
+      cookies
+    });
+
+    test('should return 200', () => {
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBeDefined();
+    });
+
+    test('should return updated data', () => {
+      let body = JSON.parse(res.body);
+
+      expect(body).toHaveProperty('docs');
+      expect(Array.isArray(body.docs)).toBe(true);
+      let orderIsReversed = body.docs.every(doc, (i) => doc === docs[i]);
+      expect(orderIsReversed).toBe(true);
+    });
+  });
 });
 
 describe('Delete question', () => {
-  describe('Non-existant user');
-  describe('Non-existant quiz');
-  describe('Non-existant questions');
-  describe('Without login');
-  describe('Multiple quizzes');
-  // Happy path
-  describe('Single question');
-  describe('Multiple questions');
-});
-describe('Collate questions', () => {});
-describe('Evaluate questions');
+  describe('Non-existant user', async () => {
+    let cookies = getLoginCookieFor(userData.multiUsers[1]);
 
-/*
-test('', async() => {
-    const res = await app.inject({ method: , url: });
+    const res = await app.inject({
+      method: 'DELETE',
+      url: endpoints.generalUrl,
+      body: JSON.stringify({
+        three_words: THREE_WORDS,
+        number: 3
+      }),
+      cookies
+    });
+
+    test('should return 401', () => {
+      expect(res.statusCode).toBe(401);
+      expect(res.body).toBeUndefined();
+    });
   });
-*/
+
+  describe('Non-existant quiz', () => {
+    test('should return 404', async () => {
+      let cookies = getLoginCookieFor(userData.updatedFirstUser);
+      const res = await app.inject({
+        method: 'DELETE',
+        url: endpoints.specificUrl.replace('{threeWords}', 'fake-quiz-word'),
+        body: JSON.parse({
+          number: 3
+        }),
+        cookies
+      });
+
+      expect(res.statusCode).toBe(404);
+      expect(res.body).toBeUndefined();
+    });
+  });
+
+  describe('Non-existant questions', () => {
+    test('should return 404', async () => {
+      let cookies = getLoginCookieFor(userData.updatedFirstUser);
+
+      const res = await app.inject({
+        method: 'DELETE',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+        body: JSON.stringify({
+          number: 42
+        }),
+        cookies
+      });
+
+      expect(res.statusCode).toBe(404);
+      expect(res.body).toBeUndefined();
+    });
+  });
+
+  describe('Without login', () => {
+    test('should return 401', async () => {
+      const res = await app.inject({
+        method: 'DELETE',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+        body: JSON.stringify({
+          number: 42
+        })
+      });
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body).toBeUndefined();
+    });
+  });
+
+  describe('Multiple quizzes', () => {
+    test('should return 400', async () => {
+      let { questionForMultipleQuiz } = data;
+      let cookies = getLoginCookieFor(userData.updatedFirstUser);
+
+      const res = await app.inject({
+        method: 'DELETE',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+        body: JSON.stringify(questionForMultipleQuiz),
+        cookies
+      });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body).toBeUndefined();
+    });
+  });
+  // Happy path
+  describe('Single question', async () => {
+    let cookies = getLoginCookieFor(userData.updatedFirstUser);
+
+    const fetch = await app.inject({
+      method: 'GET',
+      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
+    });
+
+    let fetchData = JSON.parse(fetch.body);
+
+    let qnToBeDeleted = fetchData.docs.find(
+      (doc) => doc.text === data.textQuestions[1].text
+    );
+
+    const res = await app.inject({
+      method: 'DELETE',
+      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+      body: JSON.stringify(qnToBeDeleted),
+      cookies
+    });
+
+    test('should return 204', () => {
+      expect(res.statusCode).toBe(204);
+      expect(res.body).toBeUndefined();
+    });
+  });
+
+  describe('Multiple questions', async () => {
+    let cookies = getLoginCookieFor(userData.updatedFirstUser);
+
+    const fetch = await app.inject({
+      method: 'GET',
+      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
+    });
+
+    let { docs } = JSON.parse(fetch.body);
+
+    const res = await app.inject({
+      method: 'DELETE',
+      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+      body: JSON.stringify(docs.slice(3, 2)),
+      cookies
+    });
+
+    test('should return 204', () => {
+      expect(res.statusCode).toBe(204);
+      expect(res.body).toBeUndefined();
+    });
+  });
+});
+describe('Collate questions', () => {
+  describe('Create without login', () => {
+    test('should return 404', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
+      });
+
+      expect(res.statusCode).toBe(404);
+      expect(res.body).toBeUndefined();
+    });
+  });
+
+  describe('Create with login', () => {
+    test('should return 404', async () => {
+      let cookies = getLoginCookieFor(userData.updatedFirstUser);
+
+      const res = await app.inject({
+        method: 'POST',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+        cookies
+      });
+
+      expect(res.statusCode).toBe(404);
+      expect(res.body).toBeUndefined();
+    });
+  });
+
+  describe('Update without login', () => {
+    test('should return 404', async () => {
+      const res = await app.inject({
+        method: 'PATCH',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
+      });
+
+      expect(res.statusCode).toBe(404);
+      expect(res.body).toBeUndefined();
+    });
+  });
+
+  describe('Update with login', () => {
+    test('should return 404', async () => {
+      let cookies = getLoginCookieFor(userData.updatedFirstUser);
+
+      const res = await app.inject({
+        method: 'POST',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+        cookies
+      });
+
+      expect(res.statusCode).toBe(404);
+      expect(res.body).toBeUndefined();
+    });
+  });
+
+  describe('Delete without login', () => {
+    test('should return 404', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
+      });
+
+      expect(res.statusCode).toBe(404);
+      expect(res.body).toBeUndefined();
+    });
+  });
+
+  describe('Delete with login', () => {
+    test('should return 404', async () => {
+      let cookies = getLoginCookieFor(userData.updatedFirstUser);
+
+      const res = await app.inject({
+        method: 'POST',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+        cookies
+      });
+
+      expect(res.statusCode).toBe(404);
+      expect(res.body).toBeUndefined();
+    });
+  });
+
+  describe('Fetch', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
+    });
+
+    test('should return 200', () => {
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBeDefined();
+      expect(res.body).not.toBeNull();
+    });
+
+    test('should return valid body', () => {
+      let body = JSON.parse(res.body);
+
+      expect(body).toHaveProperty('quiz');
+      expect(body).toHaveProperty('question');
+      expect(body.quiz).not.toBeNull();
+      expect(body.quiz).not.toBe({});
+      expect(Array.isArray(body.question)).toBe(true);
+      let allQnsHaveFormat = body.question.every(
+        (qn) => qn.answer_format !== undefined && qn.answer_format !== null
+      );
+      expect(allQnsHaveFormat).toBe(true);
+      let allQnsHaveNumber = body.question.every(
+        (qn) => qn.answer_format !== undefined && qn.answer_format !== null
+      );
+      expect(allQnsHaveNumber).toBe(true);
+      let allQnsHaveText = body.question.every(
+        (qn) => qn.answer_format !== undefined && qn.answer_format !== null
+      );
+      expect(allQnsHaveText).toBe(true);
+    });
+  });
+
+  describe('Fetch with answer bypass', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: endpoints.answersUrl.replace('{threeWords}', THREE_WORDS)
+    });
+
+    test('should return 200', () => {
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBeDefined();
+      expect(res.body).not.toBeNull();
+    });
+    test('should return valid body', () => {
+      let body = JSON.parse(res.body);
+
+      expect(body).toHaveProperty('quiz');
+      expect(body).toHaveProperty('question');
+      expect(body.quiz).not.toBeNull();
+      expect(body.quiz).not.toBe({});
+      expect(Array.isArray(body.question)).toBe(true);
+      let allQnsHaveFormat = body.question.every(
+        (qn) => qn.answer_format !== undefined && qn.answer_format !== null
+      );
+      expect(allQnsHaveFormat).toBe(true);
+      let allQnsHaveNumber = body.question.every(
+        (qn) => qn.answer_format !== undefined && qn.answer_format !== null
+      );
+      expect(allQnsHaveNumber).toBe(true);
+      let allQnsHaveText = body.question.every(
+        (qn) => qn.answer_format !== undefined && qn.answer_format !== null
+      );
+      expect(allQnsHaveText).toBe(true);
+    });
+
+    test('should not return answers', () => {
+      let body = JSON.parse(res.body);
+
+      expect(body).not.toHaveProperty('answer');
+      expect(body).not.toHaveProperty('answers');
+      let optionsFetched = body.question
+        .filter(
+          ({ answer_format }) =>
+            answer_format === 'mcq' || answer_format === 'msq'
+        )
+        .map(({ options }) => ({ options }))
+        .flat();
+      let someOptHasAnswer = optionsFetched.some(
+        (opt) => opt.is_answer !== undefined
+      );
+      expect(someOptHasAnswer).toBe(false);
+    });
+  });
+});

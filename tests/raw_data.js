@@ -66,11 +66,20 @@ let userWithChangedUsername = {
 let singleQuiz = {
   title: 'Test Quiz 1',
   description: 'Test Quiz description Lorem ipsum dolor sit amet',
-  start_time: 1643820622000,
+  start: 1643820622000,
   config: {
     file_upload: true,
     duration: 3.6e6
-  }
+  },
+  topics: [
+    "quizzing",
+    "questions",
+    "python",
+    "monty-python",
+    "lorem",
+    "lipsum",
+    "latin"
+  ]
 };
 
 let updatedSingleQuiz = {

@@ -109,5 +109,14 @@ module.exports = {
     addData: (arr, d) => {
       return arr.map((a) => ({ ...a, ...d }));
     }
+  },
+  search: {
+    endpoint: '/api/v1/_search',
+    data: {
+      titleToSearch: singleQuiz.title,
+      dateToSearch: "2022-02-02",
+      isoDateToSearch: new Date(singleQuiz.start).toISOString(),
+      topicToSearch: "Monty Python"
+    }
   }
 };

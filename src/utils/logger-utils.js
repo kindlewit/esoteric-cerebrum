@@ -2,11 +2,14 @@
 
 import pino from 'pino';
 import pinoES from 'pino-elasticsearch';
+import dayjs from 'dayjs';
 
 import { ES_HOST, ES_API_VERSION } from '../config';
 
-const apiV1LogStream = pinoES({
-  index: 'api-v1-log-2021', // change index to log-YYYY-month
+let INDEX = 'api-log-' + dayjs().format('YYYY-MMM-D');
+
+const esLogStream = pinoES({
+  index: INDEX,
   consistency: 'one',
   node: ES_HOST,
   'es-version': parseInt(ES_API_VERSION),
@@ -20,21 +23,27 @@ const apiV1Logger = pino(
     level: 'info',
     redact: ['req.headers.authorization']
   },
-  apiV1LogStream
+  esLogStream
 );
 */
 function modifyLog(log) {
   if (log.req) {
     // console.log(log.req.raw.url, log.req.raw);
     return {
-      abc: 'jkl',
-      method: log.req.raw.method,
-      url: log.req.raw.url,
-      httpVersion: log.req.raw.httpVersion,
-      rawHeaders: log.req.raw.rawHeaders,
-      statusCode: log.req.raw.statusCode,
-      statusMessage: log.req.raw.statusMessage,
-      keepAliveTimeout: log.req.raw.socket.server.keepAliveTimeout
+      method: log.req?.raw?.method,
+      url: log.req?.raw?.url,
+      httpVersion: log.req?.raw?.httpVersion,
+      headers: log.req?.raw?.rawHeaders,
+      statusCode: log.req?.raw?.statusCode,
+      statusMessage: log.req?.raw?.statusMessage,
+      keepAliveTimeout: log.req?.raw?.socket.server.keepAliveTimeout
+    };
+  } else if (log.res && log.res.raw) {
+    return {
+      keepAliveTimeout: log.res.raw?._keepAliveTimeout,
+      shouldKeepAlive: log.res?.raw?.shouldKeepAlive,
+      statusCode: log.res?.raw?.statusCode,
+      statusMessage: log.res?.raw?.statusMessage
     };
   }
   return log;
@@ -47,7 +56,7 @@ const apiV1Logger = pino(
     },
     level: 'info'
   },
-  apiV1LogStream
+  esLogStream
 );
 
 export { apiV1Logger };

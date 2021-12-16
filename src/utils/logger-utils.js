@@ -4,16 +4,19 @@ import pino from 'pino';
 import pinoES from 'pino-elasticsearch';
 import dayjs from 'dayjs';
 
+import { ElasticSearchUtils } from './elasticsearch-utils';
 import { ES_HOST, ES_API_VERSION } from '../config';
 
-let INDEX = 'api-log-' + dayjs().format('YYYY-MMM-D');
+let INDEX = 'api-log-' + dayjs().format('YYYY-MMM').toLowerCase();
+let es = new ElasticSearchUtils({ node: ES_HOST });
+
+es.indexExists(INDEX).then((d) => console.log(d));
 
 const esLogStream = pinoES({
   index: INDEX,
   consistency: 'one',
   node: ES_HOST,
-  'es-version': parseInt(ES_API_VERSION),
-  'flush-bytes': 1000
+  'es-version': parseInt(ES_API_VERSION)
 });
 
 // TODO: Config log as per https://github.com/pinojs/pino/blob/master/docs/api.md#log

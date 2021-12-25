@@ -10,8 +10,6 @@ import { ES_HOST, ES_API_VERSION } from '../config';
 let INDEX = 'api-log-' + dayjs().format('YYYY-MMM').toLowerCase();
 let es = new ElasticSearchUtils({ node: ES_HOST });
 
-es.indexExists(INDEX).then((d) => console.log(d));
-
 const esLogStream = pinoES({
   index: INDEX,
   consistency: 'one',

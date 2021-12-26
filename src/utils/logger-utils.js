@@ -7,26 +7,19 @@ import dayjs from 'dayjs';
 import { ElasticSearchUtils } from './elasticsearch-utils';
 import { ES_HOST, ES_API_VERSION } from '../config';
 
-let INDEX = 'api-log-' + dayjs().format('YYYY-MMM').toLowerCase();
-let es = new ElasticSearchUtils({ node: ES_HOST });
+let LOG_INDEX = 'api-log-' + dayjs().format('YYYY-MMM').toLowerCase();
+let esActor = new ElasticSearchUtils({ node: ES_HOST, index: LOG_INDEX });
+const esLogStream = esActor.createLogStream();
 
-const esLogStream = pinoES({
-  index: INDEX,
-  consistency: 'one',
-  node: ES_HOST,
-  'es-version': parseInt(ES_API_VERSION)
-});
+// const esLogStream = pinoES({
+//   index: LOG_INDEX,
+//   consistency: 'one',
+//   node: ES_HOST,
+//   'es-version': parseInt(ES_API_VERSION)
+// });
 
 // TODO: Config log as per https://github.com/pinojs/pino/blob/master/docs/api.md#log
-/*
-const apiV1Logger = pino(
-  {
-    level: 'info',
-    redact: ['req.headers.authorization']
-  },
-  esLogStream
-);
-*/
+
 function modifyLog(log) {
   if (log.req) {
     // console.log(log.req.raw.url, log.req.raw);
@@ -54,8 +47,7 @@ const apiV1Logger = pino(
   {
     formatters: {
       log: modifyLog
-    },
-    level: 'info'
+    }
   },
   esLogStream
 );

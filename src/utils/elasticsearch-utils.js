@@ -1,4 +1,5 @@
 import { Client } from '@elastic/elasticsearch';
+import { Transform } from 'stream';
 
 export function ElasticSearchUtils(opts) {
   this.client = new Client({
@@ -6,6 +7,7 @@ export function ElasticSearchUtils(opts) {
     auth: null,
     cloud: null
   });
+  this.index = opts?.index ?? null;
 }
 
 ElasticSearchUtils.prototype.indexExists = function (name) {
@@ -43,18 +45,55 @@ ElasticSearchUtils.prototype.client = function () {
   return this.client;
 };
 
-ElasticSearchUtils.prototype.bulkIndex = function (index, data) {
-  /**
-   * Index bulk documents into ES
-   */
+ElasticSearchUtils.prototype.setIndex = function (index) {
+  this.index = index;
+  return true;
+};
+
+ElasticSearchUtils.prototype.createLogStream = function () {
+  let { index, client } = this;
+
+  return new Transform({
+    readableObjectMode: true,
+    write: (chunk, encoding, next) => {
+      let body;
+
+      try {
+        body = JSON.parse(chunk);
+        body.timestamp = new Date();
+      } catch (e) {
+        next();
+      }
+      console.log(body);
+      client
+        .index({
+          index,
+          body
+        })
+        .then(() => next);
+    }
+  });
+};
+
+ElasticSearchUtils.prototype.bulkIndex = function (data) {
   return new Promise((resolve, reject) => {
+    if (
+      this.client === null ||
+      this.index === undefined ||
+      this.index === null
+    ) {
+      reject(false);
+    }
+    if (data === null || typeof data !== 'object') {
+      reject(false);
+    }
     this.client.helpers
       .bulk({
         datasource: data,
         onDocument(doc) {
           doc.timestamp = new Date();
           return {
-            index: { _index: index }
+            index: { _index: this.index }
           };
         }
       })
@@ -65,4 +104,7 @@ ElasticSearchUtils.prototype.bulkIndex = function (index, data) {
 
 /**
  * Creating custom ES actor as custom mappings is not available in Pino
+ *
+ * As of Dec 26, 2021: logging works perfectly for Server start
+ * but not for individual API calls
  */

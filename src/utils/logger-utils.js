@@ -1,28 +1,20 @@
 'use strict';
 
 import pino from 'pino';
-import pinoES from 'pino-elasticsearch';
 import dayjs from 'dayjs';
 
 import { ElasticSearchUtils } from './elasticsearch-utils';
-import { ES_HOST, ES_API_VERSION } from '../config';
+import { ES_HOST } from '../config';
 
 let LOG_INDEX = 'api-log-' + dayjs().format('YYYY-MMM').toLowerCase();
-let esActor = new ElasticSearchUtils({ node: ES_HOST, index: LOG_INDEX });
-const esLogStream = esActor.createLogStream();
-
-// const esLogStream = pinoES({
-//   index: LOG_INDEX,
-//   consistency: 'one',
-//   node: ES_HOST,
-//   'es-version': parseInt(ES_API_VERSION)
-// });
+let esActor = new ElasticSearchUtils({ node: ES_HOST });
+esActor.setIndex(LOG_INDEX);
 
 // TODO: Config log as per https://github.com/pinojs/pino/blob/master/docs/api.md#log
-
+/*
 function modifyLog(log) {
+  // console.log(log?.req?.raw?.method, log?.res?.raw?.statusMessage);
   if (log.req) {
-    // console.log(log.req.raw.url, log.req.raw);
     return {
       method: log.req?.raw?.method,
       url: log.req?.raw?.url,
@@ -39,17 +31,16 @@ function modifyLog(log) {
       statusCode: log.res?.raw?.statusCode,
       statusMessage: log.res?.raw?.statusMessage
     };
+  } else {
+    return log;
   }
-  return log;
 }
+*/
+const apiV1Logger = pino({ level: 'info' }, esActor);
 
-const apiV1Logger = pino(
-  {
-    formatters: {
-      log: modifyLog
-    }
-  },
-  esLogStream
-);
+/**
+ * Set up cron to reset ES index each month
+ * by: esActor.setIndex(new_log_index)
+ */
 
 export { apiV1Logger };

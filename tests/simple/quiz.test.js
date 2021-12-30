@@ -4,8 +4,7 @@
 const { join } = require('path');
 const { describe, test, expect } = global;
 
-const app = require(join(__dirname, '..', '..', 'lib', 'app'));
-// const db = require(join(__dirname, '..', '..', 'lib', 'orm'));
+const app = require(join(__dirname, '..', '..', 'lib', 'app')).default;
 
 const { endpoints, data } = require('../constants').quiz;
 const { data: userData, endpoints: userEndpoints } =

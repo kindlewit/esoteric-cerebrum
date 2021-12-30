@@ -4,7 +4,7 @@
 const { join } = require('path');
 const { describe, test, expect } = global;
 
-const app = require(join(__dirname, '..', '..', 'lib', 'app.js'));
+const app = require(join(__dirname, '..', '..', 'lib', 'app.js')).default;
 
 const { data: userData, endpoints: userEndpoints } = require(join(
   __dirname,

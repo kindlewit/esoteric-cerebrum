@@ -4,14 +4,17 @@
 const { join } = require('path');
 const { describe, test, expect } = global;
 
-const app = require(join(__dirname, '..', '..', 'lib', 'app')).default();
-// const db = require(join(__dirname, '..', '..', 'lib', 'orm'));
+const app = require(join(__dirname, '..', '..', 'lib', 'app')).default;
+const db = require(join(__dirname, '..', '..', 'lib', 'orm')).default;
 
-const { endpoints, data, cookieId } = require(join(
-  __dirname,
-  '..',
-  'constants.js'
-)).user;
+const { endpoints, data } = require(join(__dirname, '..', 'constants.js')).user;
+
+beforeAll(async () => {
+  await db.user.destroy({
+    truncate: true,
+    cascade: true
+  });
+});
 
 describe('Fetch users', () => {
   describe('Before creation', () => {
@@ -438,9 +441,3 @@ describe('Delete users', () => {
     });
   });
 });
-
-/*
-beforeAll(() => {
-  return db.user.destroy({ truncate: { cascade: true } });
-});
-*/

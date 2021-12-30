@@ -5,10 +5,10 @@
 const { join } = require('path');
 const { describe, test, expect } = global;
 
-const app = require(join(__dirname, '..', '..', 'lib', 'app'));
+const app = require(join(__dirname, '..', '..', 'lib', 'app')).default;
 const { endpoint, data } = require('../constants.js').search;
-const { firstUser } = require('../constants.js').user.data;
-const { singleQuiz } = require('../constants.js').quiz.data;
+const { data: userData, endpoints: userEndpoints } = require('../constants.js').user;
+const { data: quizData, endpoints: quizEndpoints } = require('../constants.js').quiz;
 
 async function getLoginCookieFor(userObject) {
   const loginRes = await app.inject({
@@ -46,9 +46,9 @@ async function createQuizFor(doc, user) {
 let THREE_WORDS, USERNAME;
 
 beforeAll(async () => {
-  await createUserFor(firstUser);
-  USERNAME = firstUser.username;
-  THREE_WORDS = await createQuizFor(singleQuiz, firstUser);
+  await createUserFor(userData.firstUser);
+  USERNAME = userData.firstUser.username;
+  THREE_WORDS = await createQuizFor(quizData.singleQuiz, userData.firstUser);
 });
 
 describe('Invalid method requests', () => {

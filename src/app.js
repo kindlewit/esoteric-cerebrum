@@ -8,7 +8,9 @@ import connectRedis from 'connect-redis';
 import { client } from './utils/cache-utils';
 import { apiV1Logger } from './utils/logger-utils';
 const RedisStore = connectRedis(session);
-const app = fastify({ logger: apiV1Logger });
+const app = fastify({
+  logger: process.env.NODE_ENV === 'test' ? false : apiV1Logger
+});
 
 const COOKIE_OPTS = {
   path: '/',

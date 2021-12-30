@@ -8,9 +8,9 @@ import connectRedis from 'connect-redis';
 import { client } from './utils/cache-utils';
 import { apiV1Logger } from './utils/logger-utils';
 import diagnosis from './doctor';
-const RedisStore = connectRedis(session);
-const app = fastify({ logger: apiV1Logger });
 
+const app = fastify({ logger: apiV1Logger });
+const RedisStore = connectRedis(session);
 const COOKIE_OPTS = {
   path: '/',
   httpOnly: true,

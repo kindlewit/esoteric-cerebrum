@@ -25,7 +25,11 @@ const {
   questionWithoutText,
   questionWithoutFormatWithoutOptions,
   questionWithoutFormatWithOptions,
-  questionWithoutWeightage
+  questionWithoutWeightage,
+  extraOptionNonAnswer,
+  extraOptionAnswer,
+  conflictingOpt,
+  questionForMultipleQuiz
 } = require('./raw_data');
 
 module.exports = {

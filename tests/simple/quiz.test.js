@@ -865,14 +865,59 @@ describe('Collate quiz', () => {
 
 describe('Evaluate quiz', () => {
   describe('Create without login', () => {
-    test('should return 401');
+    test('should return 401', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: endpoints.evaluateUrl.replace('{threeWords}', THREE_WORDS)
+      });
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body).toBeUndefined();
+    });
   });
-  describe('Create with login');
+
+  describe('Create non-existant quiz', () => {
+    test('should return 404', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: endpoints.evaluateUrl.replace('{threeWords}', 'text-doesnt-exist')
+      });
+
+      expect(res.statusCode).toBe(404);
+      expect(res.body).toBeUndefined();
+    });
+  });
+
+  describe('Create with login', async () => {
+    let cookies = await getLoginCookieFor(userData.updatedFirstUser);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: endpoints.evaluateUrl.replace('{threeWords}', THREE_WORDS),
+      cookies
+    });
+
+    test('should return 201', () => {
+      expect(res.statusCode).toBe(201);
+      expect(res.body).toBeDefined();
+    });
+
+    test('should return valid body', () => {
+      let body = JSON.parse(res.body);
+
+      expect(body).toHaveProperty('three_words');
+      expect(body).toHaveProperty('responses');
+    });
+  });
+
   describe('Update without login', () => {
     test('should return 401');
   });
   describe('Update as different user', () => {
     test('should return 403');
+  });
+  describe('Update non-existant quiz', () => {
+    test('should return 404');
   });
   describe('Update with login');
   describe('Delete without login', () => {
@@ -886,6 +931,9 @@ describe('Evaluate quiz', () => {
   });
   describe('Fetch as different user', () => {
     test('should return 403');
+  });
+  describe('Fetch non-existant quiz', () => {
+    test('should return 404');
   });
   describe('Fetch with login');
 });

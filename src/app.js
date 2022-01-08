@@ -7,11 +7,10 @@ import connectRedis from 'connect-redis';
 
 import { client } from './utils/cache-utils';
 import { apiV1Logger } from './utils/logger-utils';
-const RedisStore = connectRedis(session);
-const app = fastify({
-  logger: process.env.NODE_ENV === 'test' ? false : apiV1Logger
-});
+import diagnosis from './doctor';
 
+const app = fastify({ logger: apiV1Logger });
+const RedisStore = connectRedis(session);
 const COOKIE_OPTS = {
   path: '/',
   httpOnly: true,
@@ -41,12 +40,6 @@ app.register(require('./routes/user-routes'), { prefix: '/api/v1' });
 // app.register(require('./routes/response-routes'), { prefix: '/api/v1' });
 // app.register(require('./routes/option-routes'), { prefix: '/api/v1' });
 
-app.get('/', (request, reply) => {
-  return reply.code(200).send(
-    JSON.stringify({
-      healthy: true
-    })
-  );
-});
+app.get('/', diagnosis);
 
 export default app;

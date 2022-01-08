@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [12.x]
+        node-version: [14.x]
     steps:
       - uses: actions/checkout@master
       - name: Using Node.js ${{ matrix.node-version }}
@@ -21,23 +21,35 @@ jobs:
         run: npm i
       - name: Build Project
         run: npm run build
+      - name: Zip code & packages
+        run: zip -r shipment.zip ./lib ./node_modules ./package.json
+      - name: Zipped size
+        run: ls -lh ./shipment.zip
+
   test:
     needs: build
+    environment: staging
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [12.x]
+        node-version: [14.x]
     steps:
       - uses: actions/checkout@master
       - name: Using Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
+      - name: Set environment variables
+        run: |
+          export DB_URI=${{ secrets.STAG_DB_URI }} \
+          export RDS_HOST=${{ secrets.STAG_RDS_HOST }} \
+          export RDS_PORT=${{ secrets.STAG_RDS_PORT }} \
+          export ES_HOST=${{ secrets.STAG_ES_HOST }}
+      - name: Install Package Dependencies
+        run: npm i
+      - name: Build Project
+        run: npm run build
       - name: Simple Test
         run: npm run test
-      - name: Extensive Tests
-        run: npm run test:extensive
-      - name: Zip code & packages
-        run: zip -r shipment.zip ./lib ./node_modules ./package.json
-      - name: Zipped size
-        run: ls -lh ./shipment.zip
+      # - name: Extensive Tests
+      #   run: npm run test:extensive

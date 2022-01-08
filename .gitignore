@@ -9,13 +9,11 @@ scripts/
 tests/*/*
 resources/
 rethink/*
+autoeval/*
+structure/*
+words/*
 
 # FILES
-config.js
-index.js
-!src/models/index.js
-!src/index.js
-!src/routes/index.js
 package-lock.json
 psql-setup.sql
 words_alpha.txt

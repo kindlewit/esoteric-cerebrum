@@ -1,14 +1,14 @@
 {
   "name": "esoteric-cerebrum",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Backend logic & API for kindlewit",
   "main": "src/index.js",
-  "type": "module",
   "scripts": {
     "start": "node lib/index.js",
     "watch": "nodemon lib/index.js",
     "build": "babel src --out-dir lib --extensions='.js,.ts'",
     "test": "jest --forceExit tests/simple/",
+    "test:watch": "jest --watch tests/simple",
     "test:extensive": "jest --forceExit tests/extensive"
   },
   "author": "datmemerboi",
@@ -33,7 +33,7 @@
     "@babel/preset-typescript": "^7.16.0",
     "babel-preset-minify": "^0.5.1",
     "eslint": "^7.27.0",
-    "jest": "^27.0.6",
+    "jest": "^27.4.0",
     "nodemon": "^2.0.7",
     "typescript": "^4.3.5"
   }

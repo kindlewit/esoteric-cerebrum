@@ -1,6 +1,6 @@
 {
   "name": "esoteric-cerebrum",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Backend logic & API for kindlewit",
   "main": "src/index.js",
   "scripts": {
@@ -14,15 +14,16 @@
   "author": "datmemerboi",
   "license": "SEE LICENSE",
   "dependencies": {
+    "@elastic/elasticsearch": "^7.16.0",
     "bcryptjs": "^2.4.3",
     "connect-redis": "^6.0.0",
+    "dayjs": "^1.10.7",
     "fastify": "^3.17.0",
     "fastify-cookie": "^5.3.1",
     "fastify-multipart": "^4.0.7",
     "fastify-session": "^5.2.1",
     "lodash": "^4.17.21",
     "pg": "^8.6.0",
-    "pino-elasticsearch": "^6.1.0",
     "redis": "^3.1.2",
     "sequelize": "^6.6.2"
   },

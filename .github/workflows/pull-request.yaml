@@ -45,6 +45,10 @@ jobs:
           export RDS_HOST=${{ secrets.STAG_RDS_HOST }} \
           export RDS_PORT=${{ secrets.STAG_RDS_PORT }} \
           export ES_HOST=${{ secrets.STAG_ES_HOST }}
+      - name: Install Package Dependencies
+        run: npm i
+      - name: Build Project
+        run: npm run build
       - name: Simple Test
         run: npm run test
       # - name: Extensive Tests

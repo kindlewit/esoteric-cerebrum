@@ -3,27 +3,40 @@
 import db from '../orm';
 import { sanitize } from '../utils/user-utils';
 
-function create(doc: any): Promise<any> {
+interface User {
+  username: string;
+  password: string;
+  email: string;
+  display_name: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+function create(doc: User): Promise<User | object> {
   return new Promise((resolve, reject) => {
-    db.user.create(sanitize(doc))
-      .then(() => db.user.findByPk(doc.username, {
-        attributes: {
-          exclude: ['password']
-        },
-        raw: true
-      }))
-      .then((doc: object) => resolve(doc))
+    db.user
+      .create(sanitize(doc))
+      .then(() =>
+        db.user.findByPk(doc.username, {
+          attributes: {
+            exclude: ['password']
+          },
+          raw: true
+        })
+      )
+      .then((doc: User) => resolve(doc))
       .catch((e: object) => reject(e));
   });
 }
 
-function list(limit: number | null = null, offset: number | null = null): Promise<any> {
+function list(
+  limit: number | null = null,
+  offset: number | null = null
+): Promise<any> {
   let query = {
     offset,
     limit,
-    order: [
-      ['created_at', 'DESC']
-    ],
+    order: [['created_at', 'DESC']],
     attributes: {
       exclude: ['password']
     },
@@ -34,7 +47,7 @@ function list(limit: number | null = null, offset: number | null = null): Promis
   return db.user.findAndCountAll(query);
 }
 
-function count(): Promise<any> {
+function count(): Promise<number> {
   return db.user.count();
 }
 
@@ -42,42 +55,49 @@ function find(query: object): Promise<any> {
   return db.user.findAll(query);
 }
 
-function get(username: string, includePass: boolean = false): Promise<any> {
+function get(
+  username: string,
+  includePass: boolean = false
+): Promise<User | object> {
   return new Promise((resolve, reject) => {
     let query = includePass
       ? { raw: true }
       : {
-        attributes: {
-          exclude: ['password']
-        },
-        raw: true
-      };
-    db.user.findByPk(username, query)
-      .then((doc: any) => resolve(doc))
-      .catch((e: any) => reject(e));
+          attributes: {
+            exclude: ['password']
+          },
+          raw: true
+        };
+    db.user
+      .findByPk(username, query)
+      .then((doc: User) => resolve(doc))
+      .catch((e: object) => reject(e));
   });
 }
 
-function getDisplayName(username: string): Promise<any> {
+function getDisplayName(username: string): Promise<User> {
   return db.user.findByPk(username, {
     attributes: ['display_name'],
     raw: true
   });
 }
 
-function update(username: string, changes: object): Promise<any> {
+function update(username: string, changes: object): Promise<User | object> {
   return new Promise((resolve, reject) => {
     changes = sanitize(changes);
-    db.user.update(changes, {
-      where: { username }
-    })
-      .then(() => db.user.findByPk(username, {
-        attributes: {
-          exclude: ['password']
-        },
-        raw: true
-      }))
-      .then((doc: object) => resolve(doc))
+    db.user
+      .update(changes, {
+        where: { username }
+      })
+      .then(() =>
+        db.user.findByPk(username, {
+          attributes: {
+            exclude: ['password']
+          },
+          raw: true
+        })
+      )
+      .then((doc: User) => resolve(doc))
       .catch((e: any) => reject(e));
   });
 }
@@ -103,7 +123,8 @@ function purge(username: string): Promise<any> {
     let query = {
       where: { username }
     };
-    db.response.destroy(query)
+    db.response
+      .destroy(query)
       .then(() => db.quiz.destroy(query))
       .then(() => db.user.destroy(query))
       .then(() => resolve(true))

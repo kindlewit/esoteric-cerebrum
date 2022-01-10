@@ -1,5 +1,6 @@
 /**
- * Creating custom ES actor as custom mappings is not available in Pino
+ * Creating a custom ES actor as custom mappings is not available
+ * in Pino-ES package
  *
  * As of Dec 28, 2021: logging works perfectly for simple queries.
  * Checks required for complications
@@ -7,7 +8,7 @@
 'use strict';
 
 import { Client } from '@elastic/elasticsearch';
-import { LOG_MAPPING } from '../config';
+import { LOG_MAPPING, SCROLL_SIZE } from '../config';
 
 export function ElasticSearchUtils(opts) {
   this.client = new Client({
@@ -67,4 +68,63 @@ ElasticSearchUtils.prototype.write = async function (line) {
     body
   });
   return;
+};
+
+ElasticSearchUtils.prototype.upsert = async function (doc) {
+  let opts = {};
+
+  if (doc._id) {
+    // Extract _id already present within doc
+    let { _id, ...docWithoutId } = doc;
+    opts.id = _id;
+    opts.body = docWithoutId;
+  } else {
+    opts.body = doc;
+  }
+  opts.index = this.index;
+
+  return await this.client.index(opts);
+};
+
+ElasticSearchUtils.prototype.bulkUpsert = async function (docs) {
+  let body;
+  let _index = this.index;
+
+  body = docs.flatMap((doc) => {
+    if (doc._id) {
+      let { _id, ...docWithoutId } = doc;
+      return [{ index: { _index, _id } }, docWithoutId]; // Specified _id
+    }
+    return [{ index: { _index } }, doc]; // Rand gen _id
+  });
+
+  return await this.client.bulk({
+    index: this.index,
+    body
+  });
+};
+
+ElasticSearchUtils.prototype.search = async function (query) {
+  return await this.client.search({
+    index: this.index,
+    scroll_size: SCROLL_SIZE,
+    body: {
+      query
+    }
+  });
+};
+
+ElasticSearchUtils.prototype.get = async function (id) {
+  return await this.client.get({ index: this.index, id });
+};
+
+ElasticSearchUtils.prototype.delete = async function (id) {
+  return await this.client.delete({ index: this.index, id });
+};
+
+ElasticSearchUtils.prototype.bulkDelete = async function (query) {
+  return await this.client.deleteByQuery({
+    index: this.index,
+    body: query
+  });
 };

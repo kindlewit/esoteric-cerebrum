@@ -37,10 +37,6 @@
       "error",
       "never"
     ],
-    "computed-property-spacing": [
-      "error",
-      "always"
-    ],
     "default-case": "error",
     "default-case-last": "error",
     "eqeqeq": "warn",

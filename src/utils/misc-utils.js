@@ -36,7 +36,7 @@ function generateMWords(m, seperator = '') {
   let file = resolve(join(__dirname, '..', '..', 'words', 'long_words.txt'));
   let words = readFileSync(file, { encoding: 'utf8' });
   let threeWords = _.chain(words).split('\n').sampleSize(m).value();
-  while (_.uniq(threeWords).length < (m - 1)) {
+  while (_.uniq(threeWords).length < m - 1) {
     threeWords = _.chain(words).split('\n').sampleSize(m).value();
   }
   return _.map(threeWords, _.capitalize).join(seperator);
@@ -48,6 +48,22 @@ function computePagination(page = 1, size = 10) {
     offset: parseInt(parseInt(page) - 1) * parseInt(size)
   };
 }
+
+export const hasAll = function (source, props) {
+  if (typeof props === 'string') {
+    props = [props];
+  }
+  for (const prop of props) {
+    console.log(source[prop].length);
+    if (
+      !Object.prototype.hasOwnProperty.call(source, prop) ||
+      !source[prop].length
+    ) {
+      return false;
+    }
+  }
+  return true;
+};
 
 export {
   generateQuizQRCode,

@@ -112,3 +112,13 @@ export const LOG_MAPPING = {
     }
   }
 };
+
+export const ERROR_MESSAGE =
+  'Request caused an error: {errorcode}';
+
+export const PAGE_LIMITS = {
+  USER: 20,
+  QUIZ: 10,
+  QUESTION: 25,
+  RESPONSE: 25
+};

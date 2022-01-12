@@ -1,15 +1,14 @@
 {
   "name": "esoteric-cerebrum",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Backend logic & API for kindlewit",
   "main": "src/index.js",
   "scripts": {
     "start": "node lib/index.js",
-    "watch": "nodemon lib/index.js",
     "build": "babel src --out-dir lib --extensions='.js,.ts'",
     "test": "jest --forceExit tests/simple/",
     "test:watch": "jest --watch tests/simple",
-    "test:extensive": "jest --forceExit tests/extensive"
+    "watch": "nodemon lib/index.js"
   },
   "author": "datmemerboi",
   "license": "SEE LICENSE",
@@ -22,7 +21,8 @@
     "fastify-cookie": "^5.3.1",
     "fastify-multipart": "^4.0.7",
     "fastify-session": "^5.2.1",
-    "lodash": "^4.17.21",
+    "lodash.clonedeep": "^4.5.0",
+    "lodash.omit": "^4.5.0",
     "pg": "^8.6.0",
     "redis": "^3.1.2",
     "sequelize": "^6.6.2"
@@ -32,6 +32,7 @@
     "@babel/core": "^7.16.0",
     "@babel/preset-env": "^7.16.4",
     "@babel/preset-typescript": "^7.16.0",
+    "@types/node": "^17.0.8",
     "babel-preset-minify": "^0.5.1",
     "eslint": "^7.27.0",
     "jest": "^27.4.0",

@@ -56,11 +56,11 @@ ElasticSearchUtils.prototype.write = async function (line) {
 
     // Push below loc into log_formatter fn
     if (Object.prototype.hasOwnProperty.call(body, 'time')) delete body.time;
-    body.timestamp = new Date().valueOf();
+    body.timestamp = new Date().toISOString();
   } catch {
     body = {
       value: line,
-      timestamp: new Date().valueOf()
+      timestamp: new Date().toISOString()
     };
   }
   await this.client.index({

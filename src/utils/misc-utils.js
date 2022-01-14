@@ -54,7 +54,6 @@ export const hasAll = function (source, props) {
     props = [props];
   }
   for (const prop of props) {
-    console.log(source[prop].length);
     if (
       !Object.prototype.hasOwnProperty.call(source, prop) ||
       !source[prop].length

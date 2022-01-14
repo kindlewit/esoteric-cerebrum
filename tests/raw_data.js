@@ -17,10 +17,8 @@ let secondUser = {
 };
 
 let updatedFirstUser = {
-  username: 'test_user1',
   password: 'test_userOne',
-  display_name: 'User Tester 1',
-  email: 'user1@test.com'
+  display_name: 'User Tester 1'
 };
 
 let multiUsers = [
@@ -57,10 +55,7 @@ let userWithoutEmail = {
 };
 
 let userWithChangedUsername = {
-  username: 'test_user220',
-  password: 'test_user1',
-  display_name: 'User Tester I',
-  email: 'user1@test.com'
+  username: 'test_user220'
 };
 
 let singleQuiz = {

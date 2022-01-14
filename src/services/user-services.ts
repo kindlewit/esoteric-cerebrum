@@ -1,8 +1,8 @@
 'use strict';
 
-import cloneDeep from 'lodash.clonedeep';
-import omit from 'lodash.omit';
 import db from '../orm';
+import omit from 'lodash.omit';
+import cloneDeep from 'lodash.clonedeep';
 
 export interface User {
   username: string;

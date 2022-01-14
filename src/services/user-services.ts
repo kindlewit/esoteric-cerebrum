@@ -1,38 +1,57 @@
 'use strict';
 
+import cloneDeep from 'lodash.clonedeep';
+import omit from 'lodash.omit';
 import db from '../orm';
-import { sanitize } from '../utils/user-utils';
 
-interface User {
+export interface User {
   username: string;
   password: string;
   email: string;
-  display_name: string;
-  created_at: Date;
-  updated_at: Date;
+  display_name?: string | null;
+  created_at?: Date;
+  updated_at?: Date;
 }
 
-function create(doc: User): Promise<User | object> {
+function sanitize(doc: User): User {
+  let cleanObj = cloneDeep(doc);
+  for (let [key, value] of Object.entries(doc)) {
+    if (
+      value === undefined ||
+      value === null ||
+      value === '' ||
+      value === {} ||
+      key === 'created_at'
+    ) {
+      // Cannot insert user-defined created_at nor can it be altered
+      omit(cleanObj, key);
+    }
+  }
+  return cleanObj;
+}
+
+export const create = function (doc: User): Promise<User | unknown> {
   return new Promise((resolve, reject) => {
+    let cleanDoc = sanitize(doc);
     db.user
-      .create(sanitize(doc))
+      .create(cleanDoc)
       .then(() =>
-        db.user.findByPk(doc.username, {
+        db.user.findByPk(cleanDoc.username, {
           attributes: {
             exclude: ['password']
           },
           raw: true
         })
       )
-      .then((doc: User) => resolve(doc))
-      .catch((e: object) => reject(e));
+      .then((record: User) => resolve(record))
+      .catch((e: unknown) => reject(e));
   });
 }
 
-function list(
+export const list = function (
   limit: number | null = null,
   offset: number | null = null
-): Promise<any> {
+): Promise<unknown> {
   let query = {
     offset,
     limit,
@@ -47,42 +66,34 @@ function list(
   return db.user.findAndCountAll(query);
 }
 
-function count(): Promise<number> {
-  return db.user.count();
-}
-
-function find(query: object): Promise<any> {
+export const find = function (query: object): Promise<unknown> {
   return db.user.findAll(query);
 }
 
-function get(
+export const get = function (
   username: string,
   includePass: boolean = false
-): Promise<User | object> {
+): Promise<User | unknown> {
   return new Promise((resolve, reject) => {
     let query = includePass
       ? { raw: true }
       : {
-          attributes: {
-            exclude: ['password']
-          },
-          raw: true
-        };
+        attributes: {
+          exclude: ['password']
+        },
+        raw: true
+      };
     db.user
       .findByPk(username, query)
       .then((doc: User) => resolve(doc))
-      .catch((e: object) => reject(e));
+      .catch((e: unknown) => reject(e));
   });
 }
 
-function getDisplayName(username: string): Promise<User> {
-  return db.user.findByPk(username, {
-    attributes: ['display_name'],
-    raw: true
-  });
-}
-
-function update(username: string, changes: object): Promise<User | object> {
+export const update = function (
+  username: string,
+  changes: User
+): Promise<User | unknown> {
   return new Promise((resolve, reject) => {
     changes = sanitize(changes);
     db.user
@@ -98,50 +109,12 @@ function update(username: string, changes: object): Promise<User | object> {
         })
       )
       .then((doc: User) => resolve(doc))
-      .catch((e: any) => reject(e));
+      .catch((e: unknown) => reject(e));
   });
 }
 
-function remove(username: string): Promise<any> {
-  return db.user.destroy(username);
+export const remove = function (username: string): Promise<unknown> {
+  return db.user.destroy({ where: { username } });
 }
 
-function removeQuizzes(username: string): Promise<any> {
-  return db.quiz.destroy({
-    where: { username }
-  });
-}
-
-function removeResponses(username: string): Promise<any> {
-  return db.response.destroy({
-    where: { username }
-  });
-}
-
-function purge(username: string): Promise<any> {
-  return new Promise((resolve, reject) => {
-    let query = {
-      where: { username }
-    };
-    db.response
-      .destroy(query)
-      .then(() => db.quiz.destroy(query))
-      .then(() => db.user.destroy(query))
-      .then(() => resolve(true))
-      .catch((e: any) => reject(e));
-  });
-}
-
-export default {
-  create,
-  list,
-  count,
-  find,
-  get,
-  getDisplayName,
-  update,
-  remove,
-  removeQuizzes,
-  removeResponses,
-  purge
-};
+export { sanitize };

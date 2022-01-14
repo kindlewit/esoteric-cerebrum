@@ -2,7 +2,7 @@
 
 import cloneDeep from 'lodash.clonedeep';
 import { compareSync, hash } from 'bcryptjs';
-import UserServices from '../services/user-services';
+import * as UserServices from '../services/user-services';
 import { ERROR_MESSAGE, PAGE_LIMITS, SALT_LENGTH } from '../config';
 import { computePagination, hasAll } from '../utils/misc-utils';
 
@@ -22,6 +22,7 @@ export const cookieValidator = function (request, reply, next) {
 export const signupUser = async function (request, reply) {
   if (
     !request.body ||
+    Array.isArray(request.body) ||
     !hasAll(request.body, ['username', 'password', 'email'])
   ) {
     request.log.error('Required parameters missing');
@@ -29,6 +30,11 @@ export const signupUser = async function (request, reply) {
   }
   try {
     let signupObj = cloneDeep(request.body);
+    let existingUser = await UserServices.get(signupObj.username, false);
+    if (existingUser) {
+      request.log.error('User duplication error');
+      return reply.code(403).send();
+    }
     signupObj.password = await hash(signupObj.password, SALT_LENGTH);
     let record = await UserServices.create(signupObj);
     return reply.code(201).send(record);
@@ -45,9 +51,10 @@ export const listUsers = async function (request, reply) {
     let { limit, offset } = computePagination(currentPageNo, PAGE_LIMITS.USER);
 
     let { count, rows } = await UserServices.list(limit, offset);
+
     let response = {
       total_docs: count,
-      docs: rows
+      docs: Array.isArray(rows) ? rows : [rows]
     };
     // Compute pagination
     // if (count > PAGE_LIMITS.USER) {
@@ -88,6 +95,20 @@ export const loginUser = async function (request, reply) {
   }
 };
 
+export const logoutUser = async function (request, reply) {
+  /**
+   * Cookie verification in pre-handler
+   */
+  try {
+    await request.destroySession(() => {});
+    return reply.code(200).send();
+  } catch (e) {
+    request.log.error(e);
+    let response = ERROR_MESSAGE.replace('{errorcode}', e?.original?.code);
+    return reply.code(500).send(response);
+  }
+};
+
 export const getUser = async function (request, reply) {
   if (!request.params || !request.params.username) {
     return reply.code(400).send();
@@ -115,13 +136,23 @@ export const updateUser = async function (request, reply) {
     !request.params ||
     !request.params.username ||
     !request.body ||
+    Array.isArray(request.body) ||
     request.body === {}
   ) {
     return reply.code(400).send();
   }
   try {
     let { username } = request.params;
-    let record = await UserServices.update(username, request.body);
+    let changes = cloneDeep(request.body);
+    if (changes.username) {
+      // Attempt to change username only
+      return reply.code(403).send();
+    }
+    if (changes.password) {
+      // Changing password
+      changes.password = await hash(request.body.password, SALT_LENGTH);
+    }
+    let record = await UserServices.update(username, changes);
     if (record === undefined || record === null || record === {}) {
       return reply.code(404).send();
     }
@@ -146,7 +177,11 @@ export const deleteUser = async function (request, reply) {
       // await ResponseServices.remove(request.params.username);
       // await QuizServices.remove(request.params.username);
     }
-    await UserServices.remove(request.params.username);
+    let record = await UserServices.remove(request.params.username); // Remove user record from db
+    if (record === undefined || record === null || record === {}) {
+      return reply.code(404).send();
+    }
+    await request.destroySession(() => {});
     return reply.code(204).send();
   } catch (e) {
     request.log.error(e);

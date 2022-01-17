@@ -6,6 +6,14 @@ const { describe, test, expect } = global;
 
 const app = require(join(__dirname, '..', '..', 'lib', 'app')).default;
 const db = require(join(__dirname, '..', '..', 'lib', 'orm')).default;
+const redis = require(join(
+  __dirname,
+  '..',
+  '..',
+  'lib',
+  'utils',
+  'cache-utils'
+));
 
 const { endpoints, data } = require(join(__dirname, '..', 'constants.js')).user;
 
@@ -548,4 +556,13 @@ describe('Delete users', () => {
       expect(res.statusCode).toBe(404);
     });
   });
+});
+
+afterAll(async () => {
+  await db.user.destroy({
+    truncate: true,
+    cascade: true
+  });
+  await redis.flush();
+  await redis.quit();
 });

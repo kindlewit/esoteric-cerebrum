@@ -15,6 +15,8 @@ const setKey = promisify(client.set).bind(client);
 const getKey = promisify(client.get).bind(client);
 const deleteKey = promisify(client.del).bind(client);
 const getAllKeys = promisify(client.keys).bind(client);
+const flush = promisify(client.flushdb).bind(client);
+const quit = promisify(client.quit).bind(client);
 
 // Question cache fns
 async function setQuestionCache(threeWords, data) {
@@ -84,5 +86,7 @@ module.exports = {
   getKey,
   deleteKey,
   getAllKeys,
+  flush,
+  quit,
   client
 };

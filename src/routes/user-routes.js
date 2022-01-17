@@ -1,77 +1,52 @@
 'use strict';
 
 import * as UserController from '../controllers/user-controller';
-import { signupSchema, loginSchema } from './schema/user-schema';
+import UserSchema from './schema/user-schema';
 
 export default function (fastify, opts, done) {
-  fastify.post('/user', { schema: signupSchema }, UserController.signupUser);
-  fastify.get('/user', UserController.listUsers);
-  fastify.get('/user/:username', UserController.getUser);
-  fastify.patch(
-    '/user/:username',
-    { preHandler: UserController.cookieValidator },
-    UserController.updateUser
-  );
-  fastify.delete(
-    '/user/:username',
-    { preHandler: UserController.cookieValidator },
-    UserController.deleteUser
-  );
-  fastify.put(
-    '/user/_login',
-    { schema: loginSchema },
-    UserController.loginUser
-  );
-  fastify.put(
-    '/user/_logout',
-    { preHandler: UserController.cookieValidator },
-    UserController.logoutUser
-  );
-  /*
   fastify.route({
     url: '/user',
     method: 'POST',
-    schema: signupSchema,
-    handler: UserController.signupUserHandler
+    schema: UserSchema.signupUser,
+    handler: UserController.signupUser
   });
   fastify.route({
     url: '/user',
     method: 'GET',
-    schema: listSchema,
-    handler: UserController.listUserHandler
+    schema: UserSchema.listUsers,
+    handler: UserController.listUsers
   });
   fastify.route({
     url: '/user/:username',
     method: 'GET',
-    schema: getSchema,
-    handler: UserController.getUserHandler
+    schema: UserSchema.getUser,
+    handler: UserController.getUser
   });
   fastify.route({
     url: '/user/:username',
     method: 'PATCH',
-    schema: updateSchema,
+    schema: UserSchema.updateUser,
     preHandler: UserController.cookieValidator,
-    handler: UserController.updateUserHandler
+    handler: UserController.updateUser
   });
   fastify.route({
     url: '/user/:username',
     method: 'DELETE',
-    schema: deleteSchema,
+    schema: UserSchema.deleteUser,
     preHandler: UserController.cookieValidator,
-    handler: UserController.deleteUserHandler
+    handler: UserController.deleteUser
   });
   fastify.route({
     url: '/user/_login',
     method: 'PUT',
-    schema: loginSchmea,
-    handler: UserController.loginUserHandler
+    schema: UserSchema.loginUser,
+    handler: UserController.loginUser
   });
   fastify.route({
     url: '/user/_logout',
-    method:'PUT',
+    method: 'PUT',
     preHandler: UserController.cookieValidator,
-    handler: UserContoller.logoutUser,
-  })
-  */
+    handler: UserController.logoutUser
+  });
   done();
 }

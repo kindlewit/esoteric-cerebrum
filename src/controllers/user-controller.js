@@ -71,44 +71,6 @@ export const listUsers = async function (request, reply) {
   }
 };
 
-export const loginUser = async function (request, reply) {
-  if (!request.body || !hasAll(request.body, ['username', 'password'])) {
-    request.log.error('Required parameters missing');
-    return reply.code(400).send();
-  }
-  try {
-    let { username, password } = request.body;
-    let record = await UserServices.get(username, true);
-    if (record === undefined || record === null || record === {}) {
-      return reply.code(404).send();
-    }
-    if (await compareSync(password, record.password)) {
-      // Password validated
-      request.session.username = record.username; // Set cookie
-      return reply.code(200).send();
-    }
-    return await reply.code(401).send();
-  } catch (e) {
-    request.log.error(e);
-    let response = ERROR_MESSAGE.replace('{errorcode}', e?.original?.code);
-    return reply.code(500).send(response);
-  }
-};
-
-export const logoutUser = async function (request, reply) {
-  /**
-   * Cookie verification in pre-handler
-   */
-  try {
-    await request.destroySession(() => {});
-    return reply.code(200).send();
-  } catch (e) {
-    request.log.error(e);
-    let response = ERROR_MESSAGE.replace('{errorcode}', e?.original?.code);
-    return reply.code(500).send(response);
-  }
-};
-
 export const getUser = async function (request, reply) {
   if (!request.params || !request.params.username) {
     return reply.code(400).send();
@@ -186,5 +148,43 @@ export const deleteUser = async function (request, reply) {
   } catch (e) {
     request.log.error(e);
     return reply.code(500).send();
+  }
+};
+
+export const loginUser = async function (request, reply) {
+  if (!request.body || !hasAll(request.body, ['username', 'password'])) {
+    request.log.error('Required parameters missing');
+    return reply.code(400).send();
+  }
+  try {
+    let { username, password } = request.body;
+    let record = await UserServices.get(username, true);
+    if (record === undefined || record === null || record === {}) {
+      return reply.code(404).send();
+    }
+    if (await compareSync(password, record.password)) {
+      // Password validated
+      request.session.username = record.username; // Set cookie
+      return reply.code(200).send();
+    }
+    return await reply.code(401).send();
+  } catch (e) {
+    request.log.error(e);
+    let response = ERROR_MESSAGE.replace('{errorcode}', e?.original?.code);
+    return reply.code(500).send(response);
+  }
+};
+
+export const logoutUser = async function (request, reply) {
+  /**
+   * Cookie verification in pre-handler
+   */
+  try {
+    await request.destroySession(() => {});
+    return reply.code(200).send();
+  } catch (e) {
+    request.log.error(e);
+    let response = ERROR_MESSAGE.replace('{errorcode}', e?.original?.code);
+    return reply.code(500).send(response);
   }
 };

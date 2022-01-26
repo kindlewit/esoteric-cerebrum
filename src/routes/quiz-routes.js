@@ -1,65 +1,52 @@
 'use strict';
 
-import QuizControl from '../handlers/quiz-handlers';
-import {
-  createSchema,
-  listSchema,
-  getSchema,
-  qrSchema,
-  updateSchema,
-  deleteSchema
-} from './schema/quiz-schema';
-import { cookieValidator } from '../handlers/user-handlers';
+import QuizSchema from './schema/quiz-schema';
+import { cookieValidator } from '../controllers/user-controller';
+import * as QuizContoller from '../controllers/quiz-controller';
 
 export default function (fastify, opts, done) {
   fastify.route({
     url: '/quiz',
     method: 'POST',
-    schema: createSchema,
+    schema: QuizSchema.createQuiz,
     preHandler: cookieValidator,
-    handler: QuizControl.createQuizHandler
+    handler: QuizContoller.createQuiz
   });
   fastify.route({
     url: '/quiz',
     method: 'GET',
-    schema: listSchema,
-    handler: QuizControl.listQuizHandler
+    schema: QuizSchema.listQuizzes,
+    handler: QuizContoller.listQuizzes
   });
   fastify.route({
     url: '/quiz/:threeWords',
     method: 'GET',
-    schema: getSchema,
-    handler: QuizControl.getQuizHandler
+    schema: QuizSchema.getQuiz,
+    handler: QuizContoller.getQuiz
   });
   fastify.route({
     url: '/quiz/:threeWords',
     method: 'PATCH',
-    schema: updateSchema,
+    schema: QuizSchema.updateQuiz,
     preHandler: cookieValidator,
-    handler: QuizControl.updateQuizHandler
+    handler: QuizContoller.updateQuiz
   });
   fastify.route({
     url: '/quiz/:threeWords',
     method: 'DELETE',
-    schema: deleteSchema,
     preHandler: cookieValidator,
-    handler: QuizControl.deleteQuizHandler
-  });
-  fastify.route({
-    url: '/quiz/:threeWords/_qr',
-    method: 'GET',
-    schema: qrSchema,
-    handler: QuizControl.getQRcodeHandler
+    handler: QuizContoller.deleteQuiz
   });
   fastify.route({
     url: '/quiz/:threeWords/_collate',
     method: 'GET',
-    handler: QuizControl.collateQuizHandler
+    preHandler: cookieValidator,
+    handler: QuizContoller.collateQuiz
   });
-  fastify.route({
-    url: '/quiz/:threeWords/_evaluate',
-    method: ['GET', 'POST', 'PUT'],
-    handler: QuizControl.evaluateQuizHandler
-  });
+  // fastify.route({
+  //   url: '/quiz/:threeWords/_evaluate',
+  //   method: ['GET', 'POST', 'PUT'],
+  //   handler: QuizControl.evaluateQuizHandler
+  // });
   done();
 }

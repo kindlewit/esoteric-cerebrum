@@ -83,8 +83,9 @@ let updatedSingleQuiz = {
 };
 
 let quizWithUsernameBypass = {
-  title: 'Test Quiz 1',
-  username: 'faker_user'
+  title: 'Test Quiz 2',
+  description: 'Added username via request body',
+  username: 'faker_usger'
 };
 
 let quizWithStateChange = {

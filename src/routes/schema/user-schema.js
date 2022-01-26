@@ -100,11 +100,30 @@ const loginUser = {
   }
 };
 
+const statsUser = {
+  params: {
+    username: { type: 'string' }
+  },
+  querystring: {
+    mode: { type: 'string' }
+  },
+  response: {
+    200: { type: 'array' },
+    204: { type: 'null' },
+    400: { type: 'null' },
+    401: { type: 'null' },
+    404: { type: 'null' },
+    403: { type: 'null' },
+    500: { type: 'null' }
+  }
+};
+
 export default {
   signupUser,
   listUsers,
   getUser,
   updateUser,
   deleteUser,
-  loginUser
+  loginUser,
+  statsUser
 };

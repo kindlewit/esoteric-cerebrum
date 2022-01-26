@@ -1,6 +1,6 @@
 'use strict';
 
-import * as UserController from '../controllers/user-controller';
+import UserController from '../controllers/user-controller';
 import UserSchema from './schema/user-schema';
 
 export default function (fastify, opts, done) {
@@ -47,6 +47,13 @@ export default function (fastify, opts, done) {
     method: 'PUT',
     preHandler: UserController.cookieValidator,
     handler: UserController.logoutUser
+  });
+  fastify.route({
+    url: '/user/:username/_stats',
+    method: 'GET',
+    schema: UserSchema.statsUser,
+    preHandler: UserController.cookieValidator,
+    handler: UserController.statsUser
   });
   done();
 }

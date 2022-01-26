@@ -117,4 +117,11 @@ export const remove = function (username: string): Promise<unknown> {
   return db.user.destroy({ where: { username } });
 }
 
-export { sanitize };
+export default {
+  create,
+  list,
+  find,
+  get,
+  update,
+  remove
+};

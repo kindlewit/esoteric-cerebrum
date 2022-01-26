@@ -2,7 +2,8 @@
 
 import cloneDeep from 'lodash.clonedeep';
 import { compareSync, hash } from 'bcryptjs';
-import * as UserServices from '../services/user-services';
+import UserServices from '../services/user-services';
+import QuizServices from '../services/quiz-services';
 import { ERROR_MESSAGE, PAGE_LIMITS, SALT_LENGTH } from '../config';
 import { computePagination, hasAll } from '../utils/misc-utils';
 
@@ -98,8 +99,8 @@ export const updateUser = async function (request, reply) {
     !request.params ||
     !request.params.username ||
     !request.body ||
-    Array.isArray(request.body) ||
-    request.body === {}
+    !Object.keys(request.body).length ||
+    Array.isArray(request.body)
   ) {
     return reply.code(400).send();
   }
@@ -187,4 +188,61 @@ export const logoutUser = async function (request, reply) {
     let response = ERROR_MESSAGE.replace('{errorcode}', e?.original?.code);
     return reply.code(500).send(response);
   }
+};
+
+export const statsUser = async function (request, reply) {
+  /**
+   * Cookie verification in pre-handler
+   */
+  if (!request.params.username || !request.query.mode) {
+    return reply.code(400).send();
+  }
+  try {
+    let { username } = request.params;
+    let { mode } = request.query;
+    let userRecord = await UserServices.get(username);
+    if (userRecord === null || userRecord === undefined) {
+      // Non-existant user
+      return reply.code(404).send();
+    }
+    switch (mode) {
+      case 'qm': {
+        let query = {
+          where: { username },
+          attributes: ['three_words', 'title', 'status', 'start', 'updated_at'],
+          raw: false,
+          plain: true
+        };
+        let records = await QuizServices.find(query);
+        if (records === undefined || records === null || records === {}) {
+          return reply.code(204).send();
+        }
+        records = await records.toJSON();
+        if (!Array.isArray(records)) {
+          records = [records];
+        }
+        return reply.code(200).send(records);
+      }
+      case 'qa': {
+        // TODO: Fetch attended quizzes & scores
+        return reply.code(200).send({});
+      }
+      default: {
+        return reply.code(400).send();
+      }
+    }
+  } catch (e) {
+    return reply.code(500).send(e);
+  }
+};
+
+export default {
+  signupUser,
+  listUsers,
+  getUser,
+  updateUser,
+  deleteUser,
+  loginUser,
+  logoutUser,
+  statsUser
 };

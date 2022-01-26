@@ -1,9 +1,16 @@
 export const NODE_ENV = process.env.NODE_ENV || 'dev';
 
+const RDS_HOSTNAME = process.env.RDS_HOSTNAME || '127.0.0.1';
+const RDS_PORT = process.env.RDS_PORT || '5432';
+const RDS_DB_NAME = process.env.RDS_DB_NAME || 'thinq';
+const RDS_USERNAME = process.env.RDS_USERNAME || 'username';
+const RDS_PASSWORD = process.env.RDS_PASSWORD || 'password';
+
 export const DB_URI =
-  process.env.DB_URI || 'postgres://username:password@127.0.0.1:5432/thinq';
-export const RDS_HOST = process.env.RDS_HOST || '127.0.0.1';
-export const RDS_PORT = process.env.RDS_PORT || '6379';
+  process.env.DB_URI ||
+  `postgres://${RDS_USERNAME}:${RDS_PASSWORD}@${RDS_HOSTNAME}:${RDS_PORT}/${RDS_DB_NAME}`;
+export const REDIS_HOST = process.env.REDIS_HOST || '127.0.0.1';
+export const REDIS_PORT = process.env.REDIS_PORT || '6379';
 export const ES_HOST = process.env.ES_HOST || 'http://localhost:9200';
 export const ES_API_VERSION = process.env.ES_API_VERSION || '7.2';
 
@@ -34,13 +41,7 @@ export const LOG_MAPPING = {
       type: 'long'
     },
     msg: {
-      type: 'text',
-      fields: {
-        keyword: {
-          type: 'keyword',
-          ignore_above: 256
-        }
-      }
+      type: 'text'
     },
     pid: {
       type: 'long'
@@ -48,54 +49,24 @@ export const LOG_MAPPING = {
     req: {
       properties: {
         hostname: {
-          type: 'text',
-          fields: {
-            keyword: {
-              type: 'keyword',
-              ignore_above: 256
-            }
-          }
+          type: 'keyword'
         },
         method: {
-          type: 'text',
-          fields: {
-            keyword: {
-              type: 'keyword',
-              ignore_above: 256
-            }
-          }
+          type: 'keyword'
         },
         remoteAddress: {
-          type: 'text',
-          fields: {
-            keyword: {
-              type: 'keyword',
-              ignore_above: 256
-            }
-          }
+          type: 'keyword'
         },
         remotePort: {
           type: 'long'
         },
         url: {
-          type: 'text',
-          fields: {
-            keyword: {
-              type: 'keyword',
-              ignore_above: 256
-            }
-          }
+          type: 'text'
         }
       }
     },
     reqId: {
-      type: 'text',
-      fields: {
-        keyword: {
-          type: 'keyword',
-          ignore_above: 256
-        }
-      }
+      type: 'keyword'
     },
     res: {
       properties: {
@@ -113,12 +84,51 @@ export const LOG_MAPPING = {
   }
 };
 
-export const ERROR_MESSAGE =
-  'Request caused an error: {errorcode}';
+export const RESPONSE_MAPPING = {
+  properties: {
+    three_words: {
+      type: 'keyword'
+    },
+    username: {
+      type: 'keyword'
+    },
+    number: {
+      type: 'unsigned_long'
+    },
+    text: {
+      type: 'text'
+    },
+    choice: {
+      type: 'keyword'
+    },
+    score: {
+      type: 'float'
+    },
+    created_at: {
+      type: 'date'
+    },
+    updated_at: {
+      type: 'date'
+    }
+  }
+};
+
+export const ERROR_MESSAGE = 'Request caused an error: {errorcode}';
 
 export const PAGE_LIMITS = {
   USER: 20,
   QUIZ: 10,
   QUESTION: 25,
   RESPONSE: 25
+};
+
+export const SEARCH_LIMITS = {
+  USER: 5,
+  QUIZ: 10,
+  TOPIC: 5
+};
+
+export const ERROR_MESSAGES = {
+  GENERIC: 'Request caused an error. Please try again later.',
+  MISSING_REQUIRED: 'Required field(s) missing in request: {field}'
 };

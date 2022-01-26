@@ -46,7 +46,7 @@ ElasticSearchUtils.prototype.setIndex = async function (index, mapping) {
     );
   }
   this.index = index;
-  return true;
+  return this;
 };
 
 ElasticSearchUtils.prototype.write = async function (line) {

@@ -3,11 +3,11 @@
 const redis = require('redis');
 const { promisify } = require('util');
 
-const { RDS_HOST, RDS_PORT } = require('../config');
+const { REDIS_HOST, REDIS_PORT } = require('../config');
 
 const client = redis.createClient({
-  host: RDS_HOST,
-  port: RDS_PORT
+  host: REDIS_HOST,
+  port: REDIS_PORT
 });
 
 // Client Promises

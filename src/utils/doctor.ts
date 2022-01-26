@@ -9,7 +9,7 @@
  * - All fetch API endpoints
  */
 
-export default function diagnosis(request, reply) {
+export default function diagnosis(request: any, reply: any) {
   const diagnosticRes = { healthy: true };
   return reply.code(200).send(JSON.stringify(diagnosticRes));
 }

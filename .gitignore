@@ -12,6 +12,7 @@ rethink/*
 autoeval/*
 structure/*
 words/*
+lib/*
 
 # FILES
 package-lock.json

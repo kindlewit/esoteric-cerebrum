@@ -4,10 +4,17 @@
   "files.trimTrailingWhitespace": true,
   "files.insertFinalNewline": true,
   "files.autoSave": "onFocusChange",
+  "editor.multiCursorModifier": "ctrlCmd",
   "[javascript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
+  "[typescript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
   "[json]": {
     "editor.defaultFormatter": "vscode.json-language-features"
-  }
+  },
+  "workbench.iconTheme": "vscode-icons",
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": "active",
 }

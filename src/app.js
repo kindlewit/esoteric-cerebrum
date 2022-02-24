@@ -5,10 +5,10 @@ import cookie from 'fastify-cookie';
 import session from 'fastify-session';
 import connectRedis from 'connect-redis';
 
-import { client } from './utils/cache-utils';
-import { apiV1Logger } from './utils/logger-utils';
 import diagnosis from './utils/doctor';
 import searchHandler from './utils/search';
+import { client } from './utils/cache-utils';
+import { apiV1Logger } from './utils/logger-utils';
 
 const app = fastify({ logger: apiV1Logger });
 const RedisStore = connectRedis(session);
@@ -38,7 +38,7 @@ app.register(session, {
 app.register(require('./routes/quiz-routes'), { prefix: '/api/v1' });
 app.register(require('./routes/user-routes'), { prefix: '/api/v1' });
 // app.register(require('./routes/question-routes'), { prefix: '/api/v1' });
-// app.register(require('./routes/response-routes'), { prefix: '/api/v1' });
+app.register(require('./routes/response-routes'), { prefix: '/api/v1' });
 // app.register(require('./routes/option-routes'), { prefix: '/api/v1' });
 
 app.get('/', diagnosis);

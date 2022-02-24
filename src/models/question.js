@@ -26,7 +26,7 @@ module.exports = (sequelize, DataTypes) => {
         required: true
       },
       weightage: DataTypes.JSON,
-      files: DataTypes.ARRAY(DataTypes.STRING(255))
+      files: DataTypes.ARRAY(DataTypes.TEXT)
     },
     {
       underscored: true,

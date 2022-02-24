@@ -979,19 +979,19 @@ describe('Update question', async () => {
 
 describe('Delete question', () => {
   describe('Non-existant user', async () => {
-    let cookies = getLoginCookieFor(userData.multiUsers[1]);
+    test('should return 401', async () => {
+      let cookies = getLoginCookieFor(userData.multiUsers[1]);
 
-    const res = await app.inject({
-      method: 'DELETE',
-      url: endpoints.generalUrl,
-      body: JSON.stringify({
-        three_words: THREE_WORDS,
-        number: 3
-      }),
-      cookies
-    });
+      const res = await app.inject({
+        method: 'DELETE',
+        url: endpoints.generalUrl,
+        body: JSON.stringify({
+          three_words: THREE_WORDS,
+          number: 3
+        }),
+        cookies
+      });
 
-    test('should return 401', () => {
       expect(res.statusCode).toBe(401);
       expect(res.body).toBeUndefined();
     });

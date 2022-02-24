@@ -130,5 +130,7 @@ export const SEARCH_LIMITS = {
 
 export const ERROR_MESSAGES = {
   GENERIC: 'Request caused an error. Please try again later.',
-  MISSING_REQUIRED: 'Required field(s) missing in request: {field}'
+  MISSING_REQUIRED: 'Required field(s) missing in request: ',
+  FORBIDDEN: 'Requesting data for different user',
+  CONFLICT: 'Received conflicting data: '
 };

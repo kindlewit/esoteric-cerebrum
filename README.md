@@ -28,3 +28,44 @@ Build the project by running
 Start the API server by running
 
 ```npm start```
+
+## Folder structure
+
+<pre>
+.
+|   Config and init files happen here
+|
+|---.github
+|   |--- workflows
+|     |-- Github workflows happen here
+|
+|---.vscode
+|   |-- VS code settings happen here
+|
+|---src
+|   |---handlers
+|   |   |--- API handler functions happen here
+|   |
+|   |---models
+|   |   |--- DB models happen here
+|   |
+|   |---routes
+|   |   |--- API routing happens here
+|   |
+|   |---services
+|   |   |--- DB services happen here
+|   |
+|   |---utils
+|   |   |--- Utility functions happen here
+|
+|---tests
+|   |---constants.js
+|   |---raw_data.js
+|   |---README.md
+|   |---stress.js
+|   |
+|   |---simple
+|   |   |--- Test files happens here
+|
+|---words
+</pre>

@@ -9,6 +9,7 @@ scripts/
 tests/*/*
 resources/
 rethink/*
+lib/*
 
 # FILES
 config.js

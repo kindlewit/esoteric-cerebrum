@@ -12,7 +12,6 @@ rethink/*
 lib/*
 
 # FILES
-config.js
 index.js
 !src/models/index.js
 !src/index.js

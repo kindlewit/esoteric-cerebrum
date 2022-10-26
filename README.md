@@ -1,3 +1,6 @@
+esoteric-cerebrum
+=
+
 The backend system for kindlewit, a quizzing platform.
 
 ## Tech Stack
@@ -35,7 +38,7 @@ Leave the default port for redis (6379) as is.
 Leave the default ports for elasticsearch (9200, 9300) as is.
 
 ### Running via docker
-`Dockerfile` & `docker-compose` are available at your disposal but currently do not work.
+`Dockerfile` & `docker-compose` are available at your disposal but currently do not work. This is due to a build script error which is being worked on actively.
 
 Meanwhile you can run the individual images as containers by the following commands.
 <pre>

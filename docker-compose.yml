@@ -30,11 +30,6 @@ services:
     build: .
     ports:
       - "8000:8000"
-    environemnt:
-      - RDS_DB_NAME: "thinq"
-      - RDS_HOST: thinq_database
-      - ES_HOST: thinq_elasticsearch
-      - REDIS_HOST: thinq_redis
     depends_on:
       - thinq_elasticsearch
       - thinq_redis

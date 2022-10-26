@@ -5,19 +5,27 @@ services:
     image: "redis:latest"
     ports:
       - "6379:6379"
+
   thinq_elasticsearch:
-    image: "elasticsearch:7.17.2"
+    image: "elasticsearch:8.4.3"
     ports:
       - "9200:9200"
       - "9300:9300"
     environment:
       - discovery.type=single-node
+
   thinq_kibana:
-    image: "kibana:7.17.2"
+    image: "kibana:8.4.3"
     ports:
       - "5601:5601"
     depends_on:
       - thinq_elasticsearch
+
+  thinq_database:
+    image: "postgres"
+    ports:
+     - "5432:5432"
+
   thinq_server:
     build: .
     ports:
@@ -25,3 +33,4 @@ services:
     depends_on:
       - thinq_elasticsearch
       - thinq_redis
+      - thinq_database

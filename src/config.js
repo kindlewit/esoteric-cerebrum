@@ -3,8 +3,8 @@ export const NODE_ENV = process.env.NODE_ENV || 'development';
 const RDS_HOSTNAME = process.env.RDS_HOSTNAME || '127.0.0.1';
 const RDS_PORT = process.env.RDS_PORT || '5432';
 const RDS_DB_NAME = process.env.RDS_DB_NAME || 'thinq';
-const RDS_USERNAME = process.env.RDS_USERNAME || 'username';
-const RDS_PASSWORD = process.env.RDS_PASSWORD || 'password';
+const RDS_USERNAME = process.env.RDS_USERNAME || 'thinq_username';
+const RDS_PASSWORD = process.env.RDS_PASSWORD || 'thinq_password';
 
 export const DB_URI =
   process.env.DB_URI ||

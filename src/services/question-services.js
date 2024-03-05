@@ -4,31 +4,31 @@ const _ = require('lodash');
 const db = require('../orm');
 const { sanitize } = require('../utils/question-utils');
 
-function create(doc: any): Promise<any> {
+function create(doc) {
   return new Promise((resolve, reject) => {
     doc = sanitize(doc);
-    db.question.create(doc, { raw: true, returning: true })
-      .then((doc: any) => resolve(doc))
-      .catch((e: any) => reject(e));
+    db.question
+      .create(doc, { raw: true, returning: true })
+      .then((doc) => resolve(doc))
+      .catch((e) => reject(e));
   });
 }
 
-function bulkCreate(docs: any): Promise<any> {
+function bulkCreate(docs) {
   return new Promise((resolve, reject) => {
     docs = docs.map(sanitize);
-    db.question.bulkCreate(docs, { raw: true, returning: true })
-      .then((docs: any) => resolve(docs))
-      .catch((e: any) => reject(e));
+    db.question
+      .bulkCreate(docs, { raw: true, returning: true })
+      .then((docs) => resolve(docs))
+      .catch((e) => reject(e));
   });
 }
 
-function list(limit: number | null = null, offset: number | null = null) {
+function list(limit = null, offset = null) {
   return db.question.findAll({
     offset,
     limit,
-    order: [
-      ['created_at', 'DESC']
-    ],
+    order: [['created_at', 'DESC']],
     include: [
       {
         model: db.option,
@@ -45,18 +45,18 @@ function count() {
   return db.question.count();
 }
 
-function find(query: object) {
+function find(query) {
   return db.question.findAll(query);
 }
 
-type Params = {
-  options: boolean;
-  answers: boolean;
-};
+// type Params = {
+//   options: boolean;
+//   answers: boolean;
+// };
 
-function ofQuiz(threeWords: string, params: Params = { options: true, answers: true }) {
+function ofQuiz(threeWords, params = { options: true, answers: true }) {
   return new Promise((resolve, reject) => {
-    let query: any = {
+    let query = {
       where: {
         three_words: threeWords
       },
@@ -67,9 +67,7 @@ function ofQuiz(threeWords: string, params: Params = { options: true, answers: t
       plain: true,
       nest: true,
       include: [],
-      order: [
-        [db.question, 'number', 'ASC']
-      ]
+      order: [[db.question, 'number', 'ASC']]
     };
     if (params.options) {
       query.include.push({
@@ -89,17 +87,17 @@ function ofQuiz(threeWords: string, params: Params = { options: true, answers: t
         as: 'answers'
       });
     }
-    db.question.findAll(query)
-      .then((docs: any) => {
-        if (_.isEmpty(docs))
-          docs.toJSON()
+    db.question
+      .findAll(query)
+      .then((docs) => {
+        if (_.isEmpty(docs)) docs.toJSON();
       })
-      .then((docs: any) => resolve(docs))
-      .catch((e: any) => reject(e));
-  })
+      .then((docs) => resolve(docs))
+      .catch((e) => reject(e));
+  });
 }
 
-function get(threeWords: string, qNum: number) {
+function get(threeWords, qNum) {
   return db.question.findOne({
     where: {
       three_words: threeWords,
@@ -109,7 +107,7 @@ function get(threeWords: string, qNum: number) {
   });
 }
 
-function update(threeWords: string, qNum: number, changes: any) {
+function update(threeWords, qNum, changes) {
   changes = sanitize(changes);
   let query = {
     where: {
@@ -119,27 +117,29 @@ function update(threeWords: string, qNum: number, changes: any) {
     raw: true
   };
   return new Promise((resolve, reject) => {
-    db.question.update(changes, query)
+    db.question
+      .update(changes, query)
       .then(() => db.question.findOne(query))
-      .then((doc: any) => resolve(doc))
-      .catch((e: any) => reject(e));
+      .then((doc) => resolve(doc))
+      .catch((e) => reject(e));
   });
 }
 
-function remove(threeWords: string, qNum: number) {
+function remove(threeWords, qNum) {
   return new Promise((resolve, reject) => {
-    db.user.destroy({
-      where: {
-        three_words: threeWords,
-        number: qNum
-      }
-    })
+    db.user
+      .destroy({
+        where: {
+          three_words: threeWords,
+          number: qNum
+        }
+      })
       .then(() => resolve(true))
-      .catch((e: any) => reject(e));
+      .catch((e) => reject(e));
   });
 }
 
-function removeResponses(threeWords: string, qNum: number) {
+function removeResponses(threeWords, qNum) {
   let query = {
     where: {
       three_words: threeWords,
@@ -147,13 +147,14 @@ function removeResponses(threeWords: string, qNum: number) {
     }
   };
   return new Promise((resolve, reject) => {
-    db.response.destroy(query)
+    db.response
+      .destroy(query)
       .then(() => resolve(true))
-      .catch((e: any) => reject(e));
+      .catch((e) => reject(e));
   });
 }
 
-function removeOptions(threeWords: string, qNum: number) {
+function removeOptions(threeWords, qNum) {
   let query = {
     where: {
       three_words: threeWords,
@@ -161,13 +162,14 @@ function removeOptions(threeWords: string, qNum: number) {
     }
   };
   return new Promise((resolve, reject) => {
-    db.option.destroy(query)
+    db.option
+      .destroy(query)
       .then(() => resolve(true))
-      .catch((e: any) => reject(e));
+      .catch((e) => reject(e));
   });
 }
 
-function removeAnswers(threeWords: string, qNum: number) {
+function removeAnswers(threeWords, qNum) {
   let query = {
     where: {
       three_words: threeWords,
@@ -175,13 +177,14 @@ function removeAnswers(threeWords: string, qNum: number) {
     }
   };
   return new Promise((resolve, reject) => {
-    db.answer.destroy(query)
+    db.answer
+      .destroy(query)
       .then(() => resolve(true))
-      .catch((e: any) => reject(e));
+      .catch((e) => reject(e));
   });
 }
 
-function purge(threeWords: string, qNum: number) {
+function purge(threeWords, qNum) {
   let query = {
     where: {
       three_words: threeWords,
@@ -189,12 +192,13 @@ function purge(threeWords: string, qNum: number) {
     }
   };
   return new Promise((resolve, reject) => {
-    db.question.destroy(query)
+    db.question
+      .destroy(query)
       .then(() => db.response.destroy(query))
       .then(() => db.option.destroy(query))
       .then(() => db.answer.destroy(query))
       .then(() => resolve(true))
-      .catch((e: any) => reject(e));
+      .catch((e) => reject(e));
   });
 }
 

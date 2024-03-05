@@ -4,25 +4,24 @@ import db from '../orm';
 import { generateThreeWords } from '../utils/misc-utils';
 import { sanitize } from '../utils/quiz-utils';
 
-async function create(doc: any) {
+async function create(doc) {
   doc = sanitize(doc);
   doc.three_words = await generateThreeWords('-');
   return await db.quiz.create(doc, { returning: true, raw: true });
 }
 
-function list(limit: number | null = null, offset: number | null = null) {
+function list(limit = null, offset = null) {
   return new Promise((resolve, reject) => {
     let query = {
       offset,
       limit,
-      order: [
-        ['created_at', 'DESC']
-      ],
+      order: [['created_at', 'DESC']],
       raw: true
     };
-    db.quiz.findAndCountAll(query)
-      .then((docs: any) => resolve(docs))
-      .catch((e: any) => reject(e));
+    db.quiz
+      .findAndCountAll(query)
+      .then((docs) => resolve(docs))
+      .catch((e) => reject(e));
   });
 }
 
@@ -30,23 +29,17 @@ function count() {
   return db.quiz.count();
 }
 
-function find(query: any) {
+function find(query) {
   return db.quiz.findAll(query);
 }
 
-function collate(threeWords: string) {
+function collate(threeWords) {
   return new Promise((resolve, reject) => {
     let query = {
       where: {
         three_words: threeWords
       },
-      attributes: [
-        'title',
-        'start',
-        'duration',
-        'file_upload',
-        'status'
-      ],
+      attributes: ['title', 'start', 'duration', 'file_upload', 'status'],
       include: [
         {
           model: db.question,
@@ -65,43 +58,44 @@ function collate(threeWords: string) {
           ]
         }
       ],
-      order: [
-        [db.question, 'number', 'ASC']
-      ],
+      order: [[db.question, 'number', 'ASC']],
       raw: false,
       plain: true,
       nest: true
     };
-    db.quiz.findOne(query)
-      .then((doc: any) => doc.toJSON())
-      .then((doc: object) => resolve(doc))
-      .catch((e: any) => reject(e));
+    db.quiz
+      .findOne(query)
+      .then((doc) => doc.toJSON())
+      .then((doc) => resolve(doc))
+      .catch((e) => reject(e));
   });
 }
 
-function get(threeWords: string) {
+function get(threeWords) {
   return new Promise((resolve, reject) => {
-    db.quiz.findByPk(threeWords, { raw: true })
-      .then((doc: any) => resolve(doc))
-      .catch((e: any) => reject(e));
+    db.quiz
+      .findByPk(threeWords, { raw: true })
+      .then((doc) => resolve(doc))
+      .catch((e) => reject(e));
   });
 }
 
-function update(threeWords: string, changes: object) {
+function update(threeWords, changes) {
   return new Promise((resolve, reject) => {
     changes = sanitize(changes);
-    db.quiz.update(changes, {
-      where: {
-        three_words: threeWords
-      }
-    })
+    db.quiz
+      .update(changes, {
+        where: {
+          three_words: threeWords
+        }
+      })
       .then(() => db.quiz.findByPk(threeWords))
-      .then((doc: any) => resolve(doc.toJSON()))
-      .catch((e: any) => reject(e));
+      .then((doc) => resolve(doc.toJSON()))
+      .catch((e) => reject(e));
   });
 }
 
-function remove(threeWords: string) {
+function remove(threeWords) {
   return db.quiz.destroy({
     where: {
       three_words: threeWords
@@ -109,7 +103,7 @@ function remove(threeWords: string) {
   });
 }
 
-function removeQuestions(threeWords: string) {
+function removeQuestions(threeWords) {
   return db.question.destroy({
     where: {
       three_words: threeWords
@@ -117,7 +111,7 @@ function removeQuestions(threeWords: string) {
   });
 }
 
-function removeResponses(threeWords: string) {
+function removeResponses(threeWords) {
   return db.response.destroy({
     where: {
       three_words: threeWords
@@ -125,7 +119,7 @@ function removeResponses(threeWords: string) {
   });
 }
 
-function removeOptions(threeWords: string) {
+function removeOptions(threeWords) {
   return db.option.destroy({
     where: {
       three_words: threeWords
@@ -133,7 +127,7 @@ function removeOptions(threeWords: string) {
   });
 }
 
-function removeAnswers(threeWords: string) {
+function removeAnswers(threeWords) {
   return db.answer.destroy({
     where: {
       three_words: threeWords
@@ -141,7 +135,7 @@ function removeAnswers(threeWords: string) {
   });
 }
 
-function purge(threeWords: string) {
+function purge(threeWords) {
   /**
    * Remove all factors linked to the mentioned threeWords
    * like options, answers, responses & questions
@@ -152,12 +146,13 @@ function purge(threeWords: string) {
         three_words: threeWords
       }
     };
-    db.option.destroy(query)
+    db.option
+      .destroy(query)
       .then(() => db.response.destroy(query))
       .then(() => db.question.destroy(query))
       .then(() => db.quiz.destroy(query))
       .then(() => resolve(true))
-      .catch((e: any) => reject(e));
+      .catch((e) => reject(e));
   });
 }
 

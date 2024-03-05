@@ -5,9 +5,10 @@ import cookie from 'fastify-cookie';
 import session from 'fastify-session';
 import connectRedis from 'connect-redis';
 
+import db from './orm';
+import diagnosis from './doctor';
 import { client } from './utils/cache-utils';
 import { apiV1Logger } from './utils/logger-utils';
-import diagnosis from './doctor';
 
 const app = fastify({ logger: apiV1Logger });
 const RedisStore = connectRedis(session);
@@ -32,6 +33,9 @@ app.register(session, {
   cookieName: '_sessionId',
   cookie: COOKIE_OPTS
 });
+
+// Model migration
+db.sequelize.sync();
 
 // Route registeration
 app.register(require('./routes/quiz-routes'), { prefix: '/api/v1' });

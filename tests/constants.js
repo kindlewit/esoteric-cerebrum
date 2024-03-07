@@ -35,14 +35,9 @@ const {
 module.exports = {
   user: {
     endpoints: {
-      fetchAllUsers: '/api/v1/user',
-      fetchOneUser: '/api/v1/user/{username}',
-      createUser: '/api/v1/user',
-      loginUser: '/api/v1/user/_login',
-      updateUser: '/api/v1/user/{username}',
-      updateMultipleUser: '/api/v1/user',
-      deleteUser: '/api/v1/user/{username}',
-      deleteMultipleUser: '/api/v1/user'
+      genericUrl: '/api/v1/user',
+      specificUrl: '/api/v1/user/{username}',
+      loginUrl: '/api/v1/user/_login'
     },
     data: {
       firstUser,
@@ -78,7 +73,7 @@ module.exports = {
   },
   question: {
     endpoints: {
-      generalUrl: '/api/v1/question',
+      genericUrl: '/api/v1/question',
       specificUrl: '/api/v1/question/{threeWords}',
       answersUrl: '/api/v1/question/{threeWords}?answers=true'
     },
@@ -118,9 +113,9 @@ module.exports = {
     endpoint: '/api/v1/_search',
     data: {
       titleToSearch: singleQuiz.title,
-      dateToSearch: "2022-02-02",
+      dateToSearch: '2022-02-02',
       isoDateToSearch: new Date(singleQuiz.start).toISOString(),
-      topicToSearch: "Monty Python"
+      topicToSearch: 'Monty Python'
     }
   }
 };

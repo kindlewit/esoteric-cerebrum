@@ -21,7 +21,7 @@ describe('Fetch users', () => {
     test('should return 200', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: endpoints.fetchAllUsers
+        url: endpoints.genericUrl
       });
 
       expect(res.statusCode).toBe(200);
@@ -30,7 +30,7 @@ describe('Fetch users', () => {
     test('should have defined response body according to schema', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: endpoints.fetchAllUsers
+        url: endpoints.genericUrl
       });
 
       let { total_docs, docs } = JSON.parse(res.body);
@@ -46,7 +46,7 @@ describe('Fetch users', () => {
     test('should return 0 users', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: endpoints.fetchAllUsers
+        url: endpoints.genericUrl
       });
 
       let { total_docs, docs } = JSON.parse(res.body);
@@ -70,7 +70,10 @@ describe('Pure user creation', () => {
 
       const res = await app.inject({
         method: 'POST',
-        url: endpoints.createUser,
+        url: endpoints.genericUrl,
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify(firstUser)
       });
 
@@ -81,7 +84,7 @@ describe('Pure user creation', () => {
 
       expect(body.username).toBeDefined(); // Username should be present
       expect(body.username).not.toBeNull();
-      expect(body.username.equals(firstUser.username)).toBe(true); // Same as request
+      expect(body.username).toEqual(firstUser.username); // Same as request
       expect(body.password).toBeUndefined(); // Password should not be present
     });
 
@@ -90,12 +93,15 @@ describe('Pure user creation', () => {
 
       const res = await app.inject({
         method: 'POST',
-        url: endpoints.createUser,
+        url: endpoints.genericUrl,
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify(firstUser)
       });
 
       expect(res.statusCode).toBe(403);
-      expect(res.body).toBeUndefined();
+      expect(res.body).toBeNull();
     });
 
     test('should return 200 & user on post-create fetch', async () => {
@@ -103,7 +109,10 @@ describe('Pure user creation', () => {
 
       const res = await app.inject({
         method: 'GET',
-        url: endpoints.fetchOneUser.replace('{username}', username)
+        url: endpoints.specificUrl.replace('{username}', username),
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
 
       expect(res.statusCode).toBe(200);
@@ -114,7 +123,7 @@ describe('Pure user creation', () => {
 
       expect(body.username).toBeDefined();
       expect(body.username).not.toBeNull();
-      expect(body.username.equals(username)).toBe(true);
+      expect(body.username).toEqual(username);
       expect(body.password).toBeUndefined();
     });
   });
@@ -125,12 +134,15 @@ describe('Pure user creation', () => {
 
       const res = await app.inject({
         method: 'POST',
-        url: endpoints.createUser,
+        url: endpoints.genericUrl,
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify(multiUser)
       });
 
       expect(res.statusCode).toBe(400);
-      expect(res.body).toBeUndefined();
+      expect(res.body).toBeNull();
     });
   });
 });
@@ -142,7 +154,7 @@ describe('Impure user creation', () => {
 
       const res = await app.inject({
         method: 'POST',
-        url: endpoints.createUser,
+        url: endpoints.genericUrl,
         body: JSON.stringify(userWithoutUsername)
       });
 
@@ -157,12 +169,12 @@ describe('Impure user creation', () => {
 
       const res = await app.inject({
         method: 'POST',
-        url: endpoints.createUser,
+        url: endpoints.genericUrl,
         body: JSON.stringify(userWithoutEmail)
       });
 
       expect(res.statusCode).toBe(400);
-      expect(res.body).toBeUndefined();
+      expect(res.body).toBeNull();
     });
   });
 
@@ -172,12 +184,12 @@ describe('Impure user creation', () => {
 
       const res = await app.inject({
         method: 'POST',
-        url: endpoints.createUser,
+        url: endpoints.genericUrl,
         body: JSON.stringify(userWithoutPassword)
       });
 
       expect(res.statusCode).toBe(400);
-      expect(res.body).toBeUndefined();
+      expect(res.body).toBeNull();
     });
   });
 });
@@ -187,7 +199,7 @@ describe('Fetch users', () => {
     test('should return 200', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: endpoints.fetchAllUsers
+        url: endpoints.genericUrl
       });
 
       expect(res.statusCode).toBe(200);
@@ -196,7 +208,7 @@ describe('Fetch users', () => {
     test('should have defined response body according to schema', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: endpoints.fetchAllUsers
+        url: endpoints.genericUrl
       });
 
       let { total_docs, docs } = JSON.parse(res.body);
@@ -212,7 +224,7 @@ describe('Fetch users', () => {
     test('should have atleast 1 user', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: endpoints.fetchAllUsers
+        url: endpoints.genericUrl
       });
 
       let body = JSON.parse(res.body);
@@ -228,14 +240,14 @@ describe('Fetch users', () => {
     test('should have created username', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: endpoints.fetchAllUsers
+        url: endpoints.genericUrl
       });
 
       let body = JSON.parse(res.body);
       let { docs } = body;
 
-      let userPresentInDocs = docs.some(({ username }) =>
-        data.firstUser.username.equals(username)
+      let userPresentInDocs = docs.some(
+        ({ username }) => data.firstUser.username === username
       );
       expect(userPresentInDocs).toBe(true);
     });
@@ -249,7 +261,7 @@ describe('Update users', () => {
 
       const res = await app.inject({
         method: 'PATCH',
-        url: endpoints.updateUser.replace(
+        url: endpoints.specificUrl.replace(
           '{username}',
           updatedFirstUser.username
         ),
@@ -271,12 +283,12 @@ describe('Update users', () => {
 
       const res = await app.inject({
         method: 'PATCH',
-        url: endpoints.updateUser.replace('{username}', firstUser.username),
+        url: endpoints.specificUrl.replace('{username}', firstUser.username),
         body: JSON.stringify(userWithChangedUsername)
       });
 
       expect(res.statusCode).toBe(403);
-      expect(res.body).toBeUndefined();
+      expect(res.body).toBeNull();
     });
   });
 
@@ -286,12 +298,12 @@ describe('Update users', () => {
 
       const res = await app.inject({
         method: 'POST',
-        url: endpoints.updateMultipleUser,
+        url: endpoints.genericUrl,
         body: JSON.stringify(multiUser)
       });
 
       expect(res.statusCode).toBe(403);
-      expect(res.body).toBeUndefined();
+      expect(res.body).toBeNull();
     });
   });
 });
@@ -301,12 +313,12 @@ describe('Login user', () => {
     test('should return 400', async () => {
       const res = await app.inject({
         method: 'PUT',
-        url: endpoints.loginUser,
+        url: endpoints.loginUrl,
         body: JSON.stringify({})
       });
 
       expect(res.statusCode).toBe(400);
-      expect(res.body).toBeUndefined();
+      expect(res.body).toBeNull();
     });
   });
 
@@ -316,12 +328,12 @@ describe('Login user', () => {
 
       const res = await app.inject({
         method: 'PUT',
-        url: endpoints.loginUser,
+        url: endpoints.loginUrl,
         body: JSON.stringify(userWithoutEmail)
       });
 
       expect(res.statusCode).toBe(404);
-      expect(res.body).toBeUndefined();
+      expect(res.body).toBeNull();
     });
   });
 
@@ -331,12 +343,12 @@ describe('Login user', () => {
 
       const res = await app.inject({
         method: 'PUT',
-        url: endpoints.loginUser,
+        url: endpoints.loginUrl,
         body: JSON.stringify(firstUser)
       });
 
       expect(res.statusCode).toBe(401);
-      expect(res.body).toBeUndefined();
+      expect(res.body).toBeNull();
     });
   });
   describe('Happy path', () => {
@@ -345,12 +357,12 @@ describe('Login user', () => {
 
       const res = await app.inject({
         method: 'PUT',
-        url: endpoints.loginUser,
+        url: endpoints.loginUrl,
         body: JSON.stringify({ username, password })
       });
 
       expect(res.statusCode).toBe(200);
-      expect(res.body).toBeUndefined();
+      expect(res.body).toBeNull();
     });
 
     test('should return valid cookie on login', async () => {
@@ -358,7 +370,7 @@ describe('Login user', () => {
 
       const res = await app.inject({
         method: 'PUT',
-        url: endpoints.loginUser,
+        url: endpoints.loginUrl,
         body: JSON.stringify({ username, password })
       });
 
@@ -377,11 +389,11 @@ describe('Delete users', () => {
 
       const res = await app.inject({
         method: 'DELETE',
-        url: endpoints.deleteUser.replace('{username}', username)
+        url: endpoints.specificUrl.replace('{username}', username)
       });
 
       expect(res.statusCode).toBe(204);
-      expect(res.body).toBeUndefined();
+      expect(res.body).toBeNull();
     });
 
     test('should return 400 on retry', async () => {
@@ -389,11 +401,11 @@ describe('Delete users', () => {
 
       const res = await app.inject({
         method: 'DELETE',
-        url: endpoints.deleteUser.replace('{username}', username)
+        url: endpoints.specificUrl.replace('{username}', username)
       });
 
       expect(res.statusCode).toBe(400);
-      expect(res.body).toBeUndefined();
+      expect(res.body).toBeNull();
     });
 
     test('should return 400 on post-delete fetch', async () => {
@@ -401,11 +413,11 @@ describe('Delete users', () => {
 
       const res = await app.inject({
         method: 'GET',
-        url: endpoints.fetchOneUser.replace('{username}', username)
+        url: endpoints.specificUrl.replace('{username}', username)
       });
 
       expect(res.statusCode).toBe(400);
-      expect(res.body).toBeUndefined();
+      expect(res.body).toBeNull();
     });
 
     test('should not have user in post-delete fetch', async () => {
@@ -413,7 +425,7 @@ describe('Delete users', () => {
 
       const res = await app.inject({
         method: 'GET',
-        url: endpoints.fetchAllUsers
+        url: endpoints.genericUrl
       });
 
       expect(res.statusCode).toBe(200);
@@ -421,7 +433,7 @@ describe('Delete users', () => {
 
       let { docs } = JSON.parse(res.body);
 
-      let userInFetchedDocs = docs.some((doc) => doc.username.equals(username));
+      let userInFetchedDocs = docs.some((doc) => doc.username === username);
       expect(userInFetchedDocs).toBe(false);
     });
   });
@@ -432,12 +444,12 @@ describe('Delete users', () => {
 
       const res = await app.inject({
         method: 'DELETE',
-        url: endpoints.deleteMultipleUser,
+        url: endpoints.genericUrl,
         body: JSON.stringify(multiUser)
       });
 
       expect(res.statusCode).toBe(403);
-      expect(res.body).toBeUndefined();
+      expect(res.body).toBeNull();
     });
   });
 });

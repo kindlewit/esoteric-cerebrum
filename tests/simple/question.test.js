@@ -22,7 +22,7 @@ const { data, endpoints, addData } = require(join(
   'constants.js'
 )).question;
 
-let THREE_WORDS;
+let THREE_WORDS, COOKIES;
 
 async function getLoginCookieFor(userObject) {
   const loginRes = await app.inject({
@@ -44,12 +44,12 @@ async function createUserFor(user) {
 }
 
 async function createQuizFor(doc, user) {
-  let cookies = getLoginCookieFor(user);
+  COOKIES = getLoginCookieFor(user);
   const quizRes = await app.inject({
     method: 'POST',
     url: quizEndpoints.createQuiz,
     body: JSON.stringify(doc),
-    cookies
+    cookies: COOKIES
   });
   if (quizRes.statusCode === 201) {
     return JSON.parse(quizRes.body).three_words;
@@ -59,15 +59,18 @@ async function createQuizFor(doc, user) {
 
 beforeAll(async () => {
   await createUserFor(userData.updatedFirstUser);
-  THREE_WORDS = await createQuizFor(quizData.singleQuiz);
+  THREE_WORDS = await createQuizFor(
+    quizData.singleQuiz,
+    userData.updatedFirstUser
+  );
 });
 
 describe('Fetch all questions', () => {
-  describe('Before any creation', () => {
+  describe.only('Before any creation', () => {
     test('should return 200', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: endpoints.fetchAllQuestions
+        url: endpoints.genericUrl
       });
       expect(res.statusCode).toBe(200);
     });
@@ -75,7 +78,7 @@ describe('Fetch all questions', () => {
     test('should return valid body', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: endpoints.fetchAllQuestions
+        url: endpoints.genericUrl
       });
 
       expect(res.body).toBeDefined();
@@ -94,7 +97,7 @@ describe('Fetch all questions', () => {
     test('should return 0 records', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: endpoints.fetchAllQuestions
+        url: endpoints.genericUrl
       });
 
       let { total_docs, docs } = JSON.parse(res.body);
@@ -108,7 +111,7 @@ describe('Fetch all questions', () => {
     test('should return 404', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: endpoints.fetchQuestionsForQuiz.replace(
+        url: endpoints.specificUrl.replace(
           '{threeWords}',
           'Name-Doesnt-Exists'
         )
@@ -123,7 +126,7 @@ describe('Fetch all questions', () => {
     test('should return 404', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: endpoints.fetchAllQuestions + '?page=2'
+        url: endpoints.genericUrl + '?page=2'
       });
 
       expect(res.statusCode).toBe(404);
@@ -132,10 +135,7 @@ describe('Fetch all questions', () => {
   });
 });
 
-describe('Create questions', async () => {
-  let { updatedFirstUser } = userData;
-  let cookies = await getLoginCookieFor(updatedFirstUser);
-
+describe('Create questions', () => {
   describe('With fake user', () => {
     test('should return 401', async () => {
       let fakeCookie = {
@@ -145,7 +145,7 @@ describe('Create questions', async () => {
 
       const res = await app.inject({
         method: 'POST',
-        url: endpoints.generalUrl,
+        url: endpoints.genericUrl,
         body: JSON.parse(questionWithoutText),
         cookies: fakeCookie
       });
@@ -161,7 +161,7 @@ describe('Create questions', async () => {
 
       const res = await app.inject({
         method: 'POST',
-        url: endpoints.generalUrl,
+        url: endpoints.genericUrl,
         body: JSON.parse(questionWithoutText)
       });
 
@@ -176,7 +176,7 @@ describe('Create questions', async () => {
 
       const res = await app.inject({
         method: 'POST',
-        url: endpoints.generalUrl,
+        url: endpoints.genericUrl,
         body: JSON.parse(questionWithoutText)
       });
 
@@ -194,7 +194,7 @@ describe('Create questions', async () => {
         method: 'POST',
         url: endpoints.specificUrl.replace('{threeWords}', 'Quiz-Doesnt-Exist'),
         body: JSON.stringify(textQuestions),
-        cookies
+        cookies: COOKIES
       });
 
       expect(res.statusCode).toBe(404);
@@ -209,7 +209,7 @@ describe('Create questions', async () => {
         method: 'POST',
         url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
         body: JSON.stringify({}),
-        cookies
+        cookies: COOKIES
       });
 
       expect(res.statusCode).toBe(400);
@@ -225,7 +225,7 @@ describe('Create questions', async () => {
         method: 'POST',
         url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
         body: JSON.stringify([questionWithoutFormatWithoutOptions]),
-        cookies
+        cookies: COOKIES
       });
 
       expect(res.statusCode).toBe(400);
@@ -239,9 +239,9 @@ describe('Create questions', async () => {
 
       const res = await app.inject({
         method: 'POST',
-        url: endpoints.generalUrl,
+        url: endpoints.genericUrl,
         body: JSON.stringify(textQuestions),
-        cookies
+        cookies: COOKIES
       });
 
       expect(res.statusCode).toBe(400);
@@ -257,7 +257,7 @@ describe('Create questions', async () => {
         method: 'POST',
         url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
         body: JSON.stringify([questionWithoutOptionsWithAnswer]),
-        cookies
+        cookies: COOKIES
       });
 
       expect(res.statusCode).toBe(400);
@@ -273,7 +273,7 @@ describe('Create questions', async () => {
         method: 'POST',
         url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
         body: JSON.stringify([questionWithoutAnswer]),
-        cookies
+        cookies: COOKIES
       });
 
       expect(res.statusCode).toBe(400);
@@ -281,24 +281,25 @@ describe('Create questions', async () => {
     });
   });
 
-  describe('Unordered: without numbering', async () => {
-    let { msqQuestions } = data;
+  describe('Unordered: without numbering', () => {
+    test('should return', async () => {
+      let { msqQuestions } = data;
 
-    const res = await app.inject({
-      method: 'POST',
-      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
-      body: JSON.stringify(msqQuestions),
-      cookies
-    });
+      const res = await app.inject({
+        method: 'POST',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+        body: JSON.stringify(msqQuestions),
+        cookies: COOKIES
+      });
 
-    test('should return 201', () => {
-      expect(res.statusCode).toBe(201);
-      expect(res.body).toBeDefined();
-      expect(res.body).not.toBeNull();
-    });
+      test('201', () => {
+        expect(res.statusCode).toBe(201);
+        expect(res.body).toBeDefined();
+        expect(res.body).not.toBeNull();
+      });
 
-    test('should return valid schema', () => {
-      /*
+      test('valid schema', () => {
+        /*
         Sample format: {
           total_docs,
           docs: [
@@ -311,255 +312,266 @@ describe('Create questions', async () => {
           ]
         }
       */
-      let { total_docs, docs } = JSON.parse(res.body);
+        let { total_docs, docs } = JSON.parse(res.body);
 
-      expect(total_docs).toBeDefined();
-      expect(total_docs).not.toBeNull();
-      expect(Number.isFinite(total_docs)).toBe(true);
-      expect(docs).toBeDefined();
-      expect(docs).not.toBeNull();
-      expect(Array.isArray(body.questions)).toBe(true);
-    });
-
-    test('should return request data', () => {
-      let { docs } = JSON.parse(res.body);
-
-      let allQnsHaveThreeWord,
-        allQnsHaveText,
-        allQnsHaveFormat,
-        allQnsHaveNumber,
-        allQnsHaveOptions,
-        allQnsHaveCorrectThreeWord,
-        allQnsHaveWeightageJson;
-
-      allQnsHaveThreeWord = docs.every(
-        (doc) => doc.three_words !== undefined && doc.three_words !== null
-      );
-      allQnsHaveText = docs.every(
-        (doc) => doc.text !== undefined && doc.text !== null
-      );
-      allQnsHaveFormat = docs.every(
-        (doc) => doc.answer_format !== undefined && doc.answer_format !== null
-      );
-      allQnsHaveNumber = docs.every(
-        (doc) =>
-          doc.number !== undefined && doc.number !== null && doc.number > 0
-      );
-      allQnsHaveOptions = docs.every(
-        (doc) =>
-          doc.options !== undefined &&
-          doc.options !== null &&
-          doc.options.length > 0
-      );
-      allQnsHaveCorrectThreeWord = docs.every(
-        (doc) => doc.three_words === THREE_WORDS
-      );
-      allQnsHaveWeightageJson = docs.every(
-        (doc) =>
-          doc.weightage !== undefined &&
-          doc.weightage !== null &&
-          doc.weightage.value !== undefined &&
-          doc.weightage.value !== null
-      );
-      expect(allQnsHaveThreeWord).toBe(true);
-      expect(allQnsHaveText).toBe(true);
-      expect(allQnsHaveFormat).toBe(true);
-      expect(allQnsHaveNumber).toBe(true);
-      expect(allQnsHaveOptions).toBe(true);
-      expect(allQnsHaveCorrectThreeWord).toBe(true);
-      expect(allQnsHaveWeightageJson).toBe(true);
-
-      let optionsFetched = docs.map((doc) => doc.options).flat();
-
-      let allOptsHaveCharacter = optionsFetched.every(
-        (opt) =>
-          opt.character !== undefined &&
-          opt.character !== null &&
-          opt.character !== ''
-      );
-      expect(allOptsHaveCharacter).toBe(true);
-      let allOptsHaveText = optionsFetched.every(
-        (opt) => opt.text !== undefined && opt.text !== null && opt.text !== ''
-      );
-      expect(allOptsHaveText).toBe(true);
-    });
-
-    test('should return data on fetch', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
+        expect(total_docs).toBeDefined();
+        expect(total_docs).not.toBeNull();
+        expect(Number.isFinite(total_docs)).toBe(true);
+        expect(docs).toBeDefined();
+        expect(docs).not.toBeNull();
+        expect(Array.isArray(body.questions)).toBe(true);
       });
 
-      expect(res.statusCode).toBe(200);
-      expect(res.body).toBeDefined();
-      expect(res.body).not.toBeNull();
+      test('request data', () => {
+        let { docs } = JSON.parse(res.body);
 
-      let { total_docs, docs } = JSON.parse(res.body);
+        let allQnsHaveThreeWord,
+          allQnsHaveText,
+          allQnsHaveFormat,
+          allQnsHaveNumber,
+          allQnsHaveOptions,
+          allQnsHaveCorrectThreeWord,
+          allQnsHaveWeightageJson;
 
-      expect(Number.isFinite(total_docs)).toBe(true);
-      expect(docs.length).toBeGreaterThan(0);
+        allQnsHaveThreeWord = docs.every(
+          (doc) => doc.three_words !== undefined && doc.three_words !== null
+        );
+        allQnsHaveText = docs.every(
+          (doc) => doc.text !== undefined && doc.text !== null
+        );
+        allQnsHaveFormat = docs.every(
+          (doc) => doc.answer_format !== undefined && doc.answer_format !== null
+        );
+        allQnsHaveNumber = docs.every(
+          (doc) =>
+            doc.number !== undefined && doc.number !== null && doc.number > 0
+        );
+        allQnsHaveOptions = docs.every(
+          (doc) =>
+            doc.options !== undefined &&
+            doc.options !== null &&
+            doc.options.length > 0
+        );
+        allQnsHaveCorrectThreeWord = docs.every(
+          (doc) => doc.three_words === THREE_WORDS
+        );
+        allQnsHaveWeightageJson = docs.every(
+          (doc) =>
+            doc.weightage !== undefined &&
+            doc.weightage !== null &&
+            doc.weightage.value !== undefined &&
+            doc.weightage.value !== null
+        );
+        expect(allQnsHaveThreeWord).toBe(true);
+        expect(allQnsHaveText).toBe(true);
+        expect(allQnsHaveFormat).toBe(true);
+        expect(allQnsHaveNumber).toBe(true);
+        expect(allQnsHaveOptions).toBe(true);
+        expect(allQnsHaveCorrectThreeWord).toBe(true);
+        expect(allQnsHaveWeightageJson).toBe(true);
 
-      let allQnsHaveThreeWord,
-        allQnsHaveText,
-        allQnsHaveFormat,
-        allQnsHaveNumber,
-        allQnsHaveOptions,
-        allQnsHaveCorrectThreeWord,
-        allQnsHaveWeightageJson;
+        let optionsFetched = docs.map((doc) => doc.options).flat();
 
-      allQnsHaveThreeWord = docs.every(
-        (doc) => doc.three_words !== undefined && doc.three_words !== null
-      );
-      allQnsHaveText = docs.every(
-        (doc) => doc.text !== undefined && doc.text !== null
-      );
-      allQnsHaveFormat = docs.every(
-        (doc) => doc.answer_format !== undefined && doc.answer_format !== null
-      );
-      allQnsHaveNumber = docs.every(
-        (doc) =>
-          doc.number !== undefined && doc.number !== null && doc.number > 0
-      );
-      allQnsHaveOptions = docs.every(
-        (doc) =>
-          doc.options !== undefined &&
-          doc.options !== null &&
-          doc.options.length > 0
-      );
-      allQnsHaveCorrectThreeWord = docs.every(
-        (doc) => doc.three_words === THREE_WORDS
-      );
-      allQnsHaveWeightageJson = docs.every(
-        (doc) =>
-          doc.weightage !== undefined &&
-          doc.weightage !== null &&
-          doc.weightage.value !== undefined &&
-          doc.weightage.value !== null
-      );
+        let allOptsHaveCharacter = optionsFetched.every(
+          (opt) =>
+            opt.character !== undefined &&
+            opt.character !== null &&
+            opt.character !== ''
+        );
+        expect(allOptsHaveCharacter).toBe(true);
+        let allOptsHaveText = optionsFetched.every(
+          (opt) =>
+            opt.text !== undefined && opt.text !== null && opt.text !== ''
+        );
+        expect(allOptsHaveText).toBe(true);
+      });
 
-      expect(allQnsHaveThreeWord).toBe(true);
-      expect(allQnsHaveText).toBe(true);
-      expect(allQnsHaveFormat).toBe(true);
-      expect(allQnsHaveNumber).toBe(true);
-      expect(allQnsHaveOptions).toBe(true);
-      expect(allQnsHaveCorrectThreeWord).toBe(true);
-      expect(allQnsHaveWeightageJson).toBe(true);
+      test('data on fetch', async () => {
+        const res = await app.inject({
+          method: 'GET',
+          url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
+        });
 
-      let optionsFetched = docs.map((doc) => doc.options).flat();
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toBeDefined();
+        expect(res.body).not.toBeNull();
 
-      let allOptsHaveCharacter = optionsFetched.every(
-        (opt) =>
-          opt.character !== undefined &&
-          opt.character !== null &&
-          opt.character !== ''
-      );
-      expect(allOptsHaveCharacter).toBe(true);
-      let allOptsHaveText = optionsFetched.every(
-        (opt) => opt.text !== undefined && opt.text !== null && opt.text !== ''
-      );
-      expect(allOptsHaveText).toBe(true);
+        let { total_docs, docs } = JSON.parse(res.body);
+
+        expect(Number.isFinite(total_docs)).toBe(true);
+        expect(docs.length).toBeGreaterThan(0);
+
+        let allQnsHaveThreeWord,
+          allQnsHaveText,
+          allQnsHaveFormat,
+          allQnsHaveNumber,
+          allQnsHaveOptions,
+          allQnsHaveCorrectThreeWord,
+          allQnsHaveWeightageJson;
+
+        allQnsHaveThreeWord = docs.every(
+          (doc) => doc.three_words !== undefined && doc.three_words !== null
+        );
+        allQnsHaveText = docs.every(
+          (doc) => doc.text !== undefined && doc.text !== null
+        );
+        allQnsHaveFormat = docs.every(
+          (doc) => doc.answer_format !== undefined && doc.answer_format !== null
+        );
+        allQnsHaveNumber = docs.every(
+          (doc) =>
+            doc.number !== undefined && doc.number !== null && doc.number > 0
+        );
+        allQnsHaveOptions = docs.every(
+          (doc) =>
+            doc.options !== undefined &&
+            doc.options !== null &&
+            doc.options.length > 0
+        );
+        allQnsHaveCorrectThreeWord = docs.every(
+          (doc) => doc.three_words === THREE_WORDS
+        );
+        allQnsHaveWeightageJson = docs.every(
+          (doc) =>
+            doc.weightage !== undefined &&
+            doc.weightage !== null &&
+            doc.weightage.value !== undefined &&
+            doc.weightage.value !== null
+        );
+
+        expect(allQnsHaveThreeWord).toBe(true);
+        expect(allQnsHaveText).toBe(true);
+        expect(allQnsHaveFormat).toBe(true);
+        expect(allQnsHaveNumber).toBe(true);
+        expect(allQnsHaveOptions).toBe(true);
+        expect(allQnsHaveCorrectThreeWord).toBe(true);
+        expect(allQnsHaveWeightageJson).toBe(true);
+
+        let optionsFetched = docs.map((doc) => doc.options).flat();
+
+        let allOptsHaveCharacter = optionsFetched.every(
+          (opt) =>
+            opt.character !== undefined &&
+            opt.character !== null &&
+            opt.character !== ''
+        );
+        expect(allOptsHaveCharacter).toBe(true);
+        let allOptsHaveText = optionsFetched.every(
+          (opt) =>
+            opt.text !== undefined && opt.text !== null && opt.text !== ''
+        );
+        expect(allOptsHaveText).toBe(true);
+      });
     });
   });
 
-  describe('Wrong numbering', async () => {
-    let wronglyNumberedData = addData(data.mcsQuestions, { number: 42 }); // adding fake number
+  describe('Wrong numbering', () => {
+    test('should', async () => {
+      let wronglyNumberedData = addData(data.mcsQuestions, { number: 42 }); // adding fake number
 
-    const res = await app.inject({
-      method: 'POST',
-      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
-      body: JSON.stringify(wronglyNumberedData),
-      cookies
-    });
+      const res = await app.inject({
+        method: 'POST',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+        body: JSON.stringify(wronglyNumberedData),
+        cookies
+      });
 
-    test('should return 201', () => {
-      expect(res.statusCode).toBe(201);
-      expect(res.body).toBeDefined();
-      expect(res.body).not.toBeNull();
-    });
-    test('should have correct numbering', () => {
-      let { docs } = JSON.parse(res.body);
+      test('return 201', () => {
+        expect(res.statusCode).toBe(201);
+        expect(res.body).toBeDefined();
+        expect(res.body).not.toBeNull();
+      });
+      test('have correct numbering', () => {
+        let { docs } = JSON.parse(res.body);
 
-      let allQnsHaveCorrectNumber = docs.every(
-        (doc, i) => doc.number === 1 + i
-      );
-      expect(allQnsHaveCorrectNumber).toBe(true);
+        let allQnsHaveCorrectNumber = docs.every(
+          (doc, i) => doc.number === 1 + i
+        );
+        expect(allQnsHaveCorrectNumber).toBe(true);
+      });
     });
   });
 
   // Happy path
-  describe('Single question', async () => {
-    let singleQuestion = data.textQuestions[0];
+  describe('Single question', () => {
+    test('should', async () => {
+      let singleQuestion = data.textQuestions[0];
 
-    const res = await app.inject({
-      method: 'POST',
-      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
-      body: JSON.stringify(singleQuestion), // One question object
-      cookies
-    });
+      const res = await app.inject({
+        method: 'POST',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+        body: JSON.stringify(singleQuestion), // One question object
+        cookies
+      });
 
-    test('should return 201', () => {
-      expect(res.statusCode).toBe(201);
-      expect(res.body).toBeDefined();
-      expect(res.body).not.toBeNull();
-    });
+      test('return 201', () => {
+        expect(res.statusCode).toBe(201);
+        expect(res.body).toBeDefined();
+        expect(res.body).not.toBeNull();
+      });
 
-    test('should have required fields in response', () => {
-      /**
-       * Required fields: [ three_words, answer_format, number ]
-       */
-      let body = JSON.parse(res.body);
+      test('have required fields in response', () => {
+        /**
+         * Required fields: [ three_words, answer_format, number ]
+         */
+        let body = JSON.parse(res.body);
 
-      expect(body.three_words).toBeDefined();
-      expect(body.three_words === THREE_WORDS).toBe(true);
-      expect(body.answer_format).equals(singleQuestion.answer_format);
-      expect(body.number).toBeDefined();
-      expect(Number.isFinite(body.number)).toBe(true);
-      expect(body.number).toBeGreaterThan(0);
-    });
-  });
-
-  describe('With weightage as number', async () => {
-    let { questionWithoutText } = data;
-
-    const res = await app.inject({
-      method: 'POST',
-      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
-      body: JSON.stringify(questionWithoutText),
-      cookies
-    });
-
-    test('should return 201', () => {
-      expect(res.statusCode).toBe(201);
-      expect(res.body).toBeDefined();
-      expect(res.body).not.toBeNull();
-    });
-
-    test('should have weightage as JSON', () => {
-      let { weightage } = JSON.parse(res.body);
-
-      expect(weightage).toBeDefined();
-      expect(weightage).not.toBeNull();
-      expect(typeof weightage === 'object').toBe(true);
-      expect(weightage).toHaveProperty('value');
-      expect(Number.isFinite(weightage.value)).toBe(true);
-      expect(weightage.value).equals(questionWithoutText.weightage);
+        expect(body.three_words).toBeDefined();
+        expect(body.three_words === THREE_WORDS).toBe(true);
+        expect(body.answer_format).equals(singleQuestion.answer_format);
+        expect(body.number).toBeDefined();
+        expect(Number.isFinite(body.number)).toBe(true);
+        expect(body.number).toBeGreaterThan(0);
+      });
     });
   });
 
-  describe('Multiple questions', async () => {
-    let { mcsQuestions } = data;
+  describe('With weightage as number', () => {
+    test('should', async () => {
+      let { questionWithoutText } = data;
 
-    const res = await app.inject({
-      method: 'POST',
-      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
-      body: JSON.stringify(mcsQuestions),
-      cookies
+      const res = await app.inject({
+        method: 'POST',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+        body: JSON.stringify(questionWithoutText),
+        cookies
+      });
+
+      test('return 201', () => {
+        expect(res.statusCode).toBe(201);
+        expect(res.body).toBeDefined();
+        expect(res.body).not.toBeNull();
+      });
+
+      test('have weightage as JSON', () => {
+        let { weightage } = JSON.parse(res.body);
+
+        expect(weightage).toBeDefined();
+        expect(weightage).not.toBeNull();
+        expect(typeof weightage === 'object').toBe(true);
+        expect(weightage).toHaveProperty('value');
+        expect(Number.isFinite(weightage.value)).toBe(true);
+        expect(weightage.value).equals(questionWithoutText.weightage);
+      });
     });
+  });
 
-    test('should return 201', () => {
-      expect(res.statusCode).toBe(201);
-      expect(res.body).toBeDefined();
-      expect(res.body).not.toBeNull();
+  describe('Multiple questions', () => {
+    test('should return', async () => {
+      let { mcsQuestions } = data;
+
+      const res = await app.inject({
+        method: 'POST',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+        body: JSON.stringify(mcsQuestions),
+        cookies
+      });
+
+      test('201', () => {
+        expect(res.statusCode).toBe(201);
+        expect(res.body).toBeDefined();
+        expect(res.body).not.toBeNull();
+      });
     });
   });
 });
@@ -567,8 +579,7 @@ describe('Create questions', async () => {
 // const res = await app.inject({ method: 'GET', url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)});
 
 describe('Fetch questions', () => {
-  describe('Fetch all');
-  describe('With non-existant quiz', () => {
+  describe('Fetch all: With non-existant quiz', () => {
     test('should return 404', async () => {
       const res = await app.inject({
         method: 'GET',
@@ -580,86 +591,87 @@ describe('Fetch questions', () => {
     });
   });
 
-  describe('With existing quiz', async () => {
-    const res = await app.inject({
-      method: 'GET',
-      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
-    });
-    let docs;
+  describe('Fetch all: With existing quiz', () => {
+    test('should', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
+      });
+      let docs;
 
-    test('should return 200', () => {
-      expect(res.statusCode).toBe(200);
-      expect(res.body).toBeDefined();
-      expect(res.body).not.toBeNull();
-    });
-    test('should have valid body', () => {
-      let body = JSON.parse(res.body);
+      test('return 200', () => {
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toBeDefined();
+        expect(res.body).not.toBeNull();
+      });
+      test('have valid body', () => {
+        let body = JSON.parse(res.body);
 
-      expect(body).toHaveProperty('docs');
-      expect(body.docs).not.toBeNull();
-      expect(Array.isArray(body.docs)).toBe(true);
-      expect(body.docs.length).toBeGreaterThan(0);
+        expect(body).toHaveProperty('docs');
+        expect(body.docs).not.toBeNull();
+        expect(Array.isArray(body.docs)).toBe(true);
+        expect(body.docs.length).toBeGreaterThan(0);
 
-      docs = body.docs;
-    });
-    test('should have question.three_words', () => {
-      let allQnsHaveThreeWord = docs.every(
-        (doc) => doc.three_words !== undefined && doc.three_words !== null
-      );
-      let allQnsHaveCorrectThreeWord = docs.every(
-        (doc) => doc.three_words === THREE_WORDS
-      );
-      expect(allQnsHaveThreeWord).toBe(true);
-      expect(allQnsHaveCorrectThreeWord).toBe(true);
-    });
-    test('should have question.answer_format', () => {
-      let allQnsHaveFormat = docs.every(
-        (doc) => doc.answer_format !== undefined && doc.answer_format !== null
-      );
-      expect(allQnsHaveFormat).toBe(true);
-    });
-    test('should have question.number', () => {
-      let allQnsHaveNumber = docs.every(
-        (doc) =>
-          doc.number !== undefined && doc.number !== null && doc.number > 0
-      );
-      expect(allQnsHaveNumber).toBe(true);
-    });
-    test('should have question.options', () => {
-      let allQnsHaveOptions = docs.every(
-        (doc) =>
-          doc.options !== undefined &&
-          doc.options !== null &&
-          doc.options.length > 0
-      );
-      expect(allQnsHaveOptions).toBe(true);
-    });
-    test('should have question.options.character', () => {
-      let allOptsHaveCharacter = docs
-        .map((doc) => doc.options)
-        .flat()
-        .every(
-          (opt) =>
-            opt.character !== undefined &&
-            opt.character !== null &&
-            opt.character !== ''
+        docs = body.docs;
+      });
+      test('have question.three_words', () => {
+        let allQnsHaveThreeWord = docs.every(
+          (doc) => doc.three_words !== undefined && doc.three_words !== null
         );
-      expect(allOptsHaveCharacter).toBe(true);
-    });
-    test('should have question.options.text', () => {
-      let allOptsHaveText = docs
-        .map((doc) => doc.options)
-        .flat()
-        .every(
-          (opt) =>
-            opt.text !== undefined && opt.text !== null && opt.text !== ''
+        let allQnsHaveCorrectThreeWord = docs.every(
+          (doc) => doc.three_words === THREE_WORDS
         );
-      expect(allOptsHaveText).toBe(true);
+        expect(allQnsHaveThreeWord).toBe(true);
+        expect(allQnsHaveCorrectThreeWord).toBe(true);
+      });
+      test('have question.answer_format', () => {
+        let allQnsHaveFormat = docs.every(
+          (doc) => doc.answer_format !== undefined && doc.answer_format !== null
+        );
+        expect(allQnsHaveFormat).toBe(true);
+      });
+      test('have question.number', () => {
+        let allQnsHaveNumber = docs.every(
+          (doc) =>
+            doc.number !== undefined && doc.number !== null && doc.number > 0
+        );
+        expect(allQnsHaveNumber).toBe(true);
+      });
+      test('have question.options', () => {
+        let allQnsHaveOptions = docs.every(
+          (doc) =>
+            doc.options !== undefined &&
+            doc.options !== null &&
+            doc.options.length > 0
+        );
+        expect(allQnsHaveOptions).toBe(true);
+      });
+      test('have question.options.character', () => {
+        let allOptsHaveCharacter = docs
+          .map((doc) => doc.options)
+          .flat()
+          .every(
+            (opt) =>
+              opt.character !== undefined &&
+              opt.character !== null &&
+              opt.character !== ''
+          );
+        expect(allOptsHaveCharacter).toBe(true);
+      });
+      test('have question.options.text', () => {
+        let allOptsHaveText = docs
+          .map((doc) => doc.options)
+          .flat()
+          .every(
+            (opt) =>
+              opt.text !== undefined && opt.text !== null && opt.text !== ''
+          );
+        expect(allOptsHaveText).toBe(true);
+      });
     });
   });
 
-  describe('Paginated request');
-  describe('Answer without login', () => {
+  describe('Paginated request: Answer without login', () => {
     test('should return 200 with without answers', async () => {
       const res = await app.inject({
         method: 'GET',
@@ -682,14 +694,12 @@ describe('Fetch questions', () => {
     });
   });
 
-  describe('Answer with different login', () => {
+  describe('Paginated request: Answer with different login', () => {
     test('should return 200 without answers', async () => {
-      let cookies = await getLoginCookieFor(userData.secondUser);
-
       const res = await app.inject({
         method: 'GET',
         url: endpoints.answersUrl.replace('{threeWords}', THREE_WORDS),
-        cookies
+        cookies: COOKIES
       });
 
       expect(res.statusCode).toBe(200);
@@ -707,14 +717,12 @@ describe('Fetch questions', () => {
     });
   });
 
-  describe('Answer with creator login', () => {
+  describe('Paginated request: Answer with creator login', () => {
     test('should return 200 with answers', async () => {
-      let cookies = await getLoginCookieFor(userData.updatedFirstUser);
-
       const res = await app.inject({
         method: 'GET',
         url: endpoints.answersUrl.replace('{threeWords}', THREE_WORDS),
-        cookies
+        cookies: COOKIES // cookie of updatedFirstUser
       });
 
       expect(res.statusCode).toBe(200);
@@ -736,16 +744,14 @@ describe('Fetch questions', () => {
   });
 });
 
-describe('Update question', async () => {
-  let cookies = await getLoginCookieFor(userData.updatedFirstUser);
-
+describe('Update question', () => {
   describe('With empty data', () => {
     test('should return 400', async () => {
       const res = await app.inject({
         method: 'PATCH',
         url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
         body: JSON.stringify({}),
-        cookies
+        cookies: COOKIES
       });
 
       expect(res.statusCode).toBe(400);
@@ -761,7 +767,7 @@ describe('Update question', async () => {
         method: 'PATCH',
         url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
         body: JSON.stringify(wronglyNumberedData),
-        cookies
+        cookies: COOKIES
       });
 
       expect(res.statusCode).toBe(500); // Due to repeated number key
@@ -769,166 +775,176 @@ describe('Update question', async () => {
     });
   });
 
-  describe('Adding options', async () => {
-    let { extraOptionNonAnswer } = data;
+  describe('Adding options', () => {
+    test('should', async () => {
+      let { extraOptionNonAnswer } = data;
 
-    const fetch = await app.inject({
-      method: 'GET',
-      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
-    });
+      const fetch = await app.inject({
+        method: 'GET',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
+      });
 
-    let { docs } = JSON.parse(fetch.body);
-    docs[0] = docs[0].options.push(extraOptionNonAnswer);
+      let { docs } = JSON.parse(fetch.body);
+      docs[0] = docs[0].options.push(extraOptionNonAnswer);
 
-    const res = await app.inject({
-      method: 'PATCH',
-      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
-      body: JSON.stringify(docs),
-      cookies
-    });
+      const res = await app.inject({
+        method: 'PATCH',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+        body: JSON.stringify(docs),
+        cookies: COOKIES
+      });
 
-    test('should return 200', () => {
-      expect(res.statusCode).toBe(200);
-      expect(res.body).toBeDefined();
-    });
+      test('return 200', () => {
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toBeDefined();
+      });
 
-    test('should return updated data', () => {
-      let body = JSON.parse(res.body);
-      expect(Array.isArray(body.docs)).toBe(true);
-      expect(body.docs[0]).toMatchObject(docs[0]);
-    });
-  });
-
-  describe('Adding answers', async () => {
-    let { extraOptionAnswer } = data;
-
-    const fetch = await app.inject({
-      method: 'GET',
-      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
-    });
-
-    let { docs } = JSON.parse(fetch.body);
-    docs[0] = docs[0].options.push(extraOptionAnswer);
-
-    const res = await app.inject({
-      method: 'PATCH',
-      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
-      body: JSON.stringify(docs),
-      cookies
-    });
-
-    test('should return 200', () => {
-      expect(res.statusCode).toBe(200);
-      expect(res.body).toBeDefined();
-    });
-
-    test('should return updated data', () => {
-      let body = JSON.parse(res.body);
-      expect(Array.isArray(body.docs)).toBe(true);
-      expect(body.docs[0]).toMatchObject(docs[0]);
+      test('return updated data', () => {
+        let body = JSON.parse(res.body);
+        expect(Array.isArray(body.docs)).toBe(true);
+        expect(body.docs[0]).toMatchObject(docs[0]);
+      });
     });
   });
 
-  describe('Conflicting option', async () => {
-    let { conflictingOpt } = data;
-    const fetch = await app.inject({
-      method: 'GET',
-      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
-    });
+  describe('Adding answers', () => {
+    test('should return', async () => {
+      let { extraOptionAnswer } = data;
 
-    let { docs } = JSON.parse(fetch.body);
-    docs.filter((doc) => doc.answer_format === 'msq')[1].options[0] =
-      conflictingOpt;
+      const fetch = await app.inject({
+        method: 'GET',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
+      });
 
-    const res = await app.inject({
-      method: 'PATCH',
-      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
-      body: JSON.stringify(docs),
-      cookies
-    });
+      let { docs } = JSON.parse(fetch.body);
+      docs[0] = docs[0].options.push(extraOptionAnswer);
 
-    test('should return 200', () => {
-      expect(res.statusCode).toBe(200);
-      expect(res.body).toBeDefined();
-    });
+      const res = await app.inject({
+        method: 'PATCH',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+        body: JSON.stringify(docs),
+        cookies
+      });
 
-    test('should return updated data', () => {
-      let body = JSON.parse(res.body);
-      expect(Array.isArray(body.docs)).toBe(true);
-      let changedOpt = docs.filter((doc) => doc.answer_format === 'msq')[1]
-        .options[0];
-      expect(changedOpt).toMatchObject(conflictingOpt);
-    });
-  });
+      test('200', () => {
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toBeDefined();
+      });
 
-  describe('Removed options', async () => {
-    const fetch = await app.inject({
-      method: 'GET',
-      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
-    });
-
-    let { docs } = JSON.parse(fetch.body);
-    docs.filter((doc) => doc.answer_format === 'msq')[1].options.pop(); // removing last option in 2nd question
-    let lengthAfterModification = docs.filter(
-      (doc) => doc.answer_format === 'msq'
-    )[1].options.length;
-
-    const res = await app.inject({
-      method: 'PATCH',
-      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
-      body: JSON.stringify(docs),
-      cookies
-    });
-
-    test('should return 200', () => {
-      expect(res.statusCode).toBe(200);
-      expect(res.body).toBeDefined();
-    });
-
-    test('should return updated data', () => {
-      let body = JSON.parse(res.body);
-
-      expect(body).toHaveProperty('docs');
-      let changedOpts = docs.filter((doc) => doc.answer_format === 'msq')[1]
-        .options;
-      expect(changedOpts.length).equals(lengthAfterModification);
+      test('updated data', () => {
+        let body = JSON.parse(res.body);
+        expect(Array.isArray(body.docs)).toBe(true);
+        expect(body.docs[0]).toMatchObject(docs[0]);
+      });
     });
   });
 
-  describe('Removed answers', async () => {
-    const fetch = await app.inject({
-      method: 'GET',
-      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
+  describe('Conflicting option', () => {
+    test('should return', async () => {
+      let { conflictingOpt } = data;
+      const fetch = await app.inject({
+        method: 'GET',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
+      });
+
+      let { docs } = JSON.parse(fetch.body);
+      docs.filter((doc) => doc.answer_format === 'msq')[1].options[0] =
+        conflictingOpt;
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+        body: JSON.stringify(docs),
+        cookies
+      });
+
+      test('200', () => {
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toBeDefined();
+      });
+
+      test('updated data', () => {
+        let body = JSON.parse(res.body);
+        expect(Array.isArray(body.docs)).toBe(true);
+        let changedOpt = docs.filter((doc) => doc.answer_format === 'msq')[1]
+          .options[0];
+        expect(changedOpt).toMatchObject(conflictingOpt);
+      });
     });
+  });
 
-    let { docs } = JSON.parse(fetch.body);
-    docs
-      .filter((doc) => doc.answer_format === 'msq')[2]
-      .options.filter((opt) => opt.is_answer === true)
-      .pop(); // removing last answer in 3rd question
-    let lengthAfterModification = docs.filter(
-      (doc) => doc.answer_format === 'msq'
-    )[2].options.length;
+  describe('Removed options', () => {
+    test('should return', async () => {
+      const fetch = await app.inject({
+        method: 'GET',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
+      });
 
-    const res = await app.inject({
-      method: 'PATCH',
-      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
-      body: JSON.stringify(docs),
-      cookies
+      let { docs } = JSON.parse(fetch.body);
+      docs.filter((doc) => doc.answer_format === 'msq')[1].options.pop(); // removing last option in 2nd question
+      let lengthAfterModification = docs.filter(
+        (doc) => doc.answer_format === 'msq'
+      )[1].options.length;
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+        body: JSON.stringify(docs),
+        cookies
+      });
+
+      test('200', () => {
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toBeDefined();
+      });
+
+      test('updated data', () => {
+        let body = JSON.parse(res.body);
+
+        expect(body).toHaveProperty('docs');
+        let changedOpts = docs.filter((doc) => doc.answer_format === 'msq')[1]
+          .options;
+        expect(changedOpts.length).equals(lengthAfterModification);
+      });
     });
+  });
 
-    test('should return 200', () => {
-      expect(res.statusCode).toBe(200);
-      expect(res.body).toBeDefined();
-    });
+  describe('Removed answers', () => {
+    test('should return', async () => {
+      const fetch = await app.inject({
+        method: 'GET',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
+      });
 
-    test('should return updated data', () => {
-      let body = JSON.parse(res.body);
+      let { docs } = JSON.parse(fetch.body);
+      docs
+        .filter((doc) => doc.answer_format === 'msq')[2]
+        .options.filter((opt) => opt.is_answer === true)
+        .pop(); // removing last answer in 3rd question
+      let lengthAfterModification = docs.filter(
+        (doc) => doc.answer_format === 'msq'
+      )[2].options.length;
 
-      expect(body).toHaveProperty('docs');
-      let changedOpts = docs.filter((doc) => doc.answer_format === 'msq')[1]
-        .options;
-      expect(changedOpts.length).equals(lengthAfterModification);
+      const res = await app.inject({
+        method: 'PATCH',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+        body: JSON.stringify(docs),
+        cookies
+      });
+
+      test('200', () => {
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toBeDefined();
+      });
+
+      test('updated data', () => {
+        let body = JSON.parse(res.body);
+
+        expect(body).toHaveProperty('docs');
+        let changedOpts = docs.filter((doc) => doc.answer_format === 'msq')[1]
+          .options;
+        expect(changedOpts.length).equals(lengthAfterModification);
+      });
     });
   });
 
@@ -938,75 +954,78 @@ describe('Update question', async () => {
 
       const res = await app.inject({
         method: 'PATCH',
-        url: endpoints.generalUrl,
+        url: endpoints.genericUrl,
         body: JSON.stringify(questionForMultipleQuiz),
         cookies
       });
     });
   });
 
-  describe('Re-arranged order', async () => {
-    const fetch = await app.inject({
-      method: 'GET',
-      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
-    });
+  describe('Re-arranged order', () => {
+    test('should return', async () => {
+      const fetch = await app.inject({
+        method: 'GET',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
+      });
 
-    let { docs } = JSON.parse(fetch.body);
-    docs = docs.map((doc) => delete doc.number).reverse();
+      let { docs } = JSON.parse(fetch.body);
+      docs = docs.map((doc) => delete doc.number).reverse();
 
-    const res = await app.inject({
-      method: 'PATCH',
-      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
-      body: JSON.stringify(docs),
-      cookies
-    });
+      const res = await app.inject({
+        method: 'PATCH',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+        body: JSON.stringify(docs),
+        cookies
+      });
 
-    test('should return 200', () => {
-      expect(res.statusCode).toBe(200);
-      expect(res.body).toBeDefined();
-    });
+      test('200', () => {
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toBeDefined();
+      });
 
-    test('should return updated data', () => {
-      let body = JSON.parse(res.body);
+      test('updated data', () => {
+        let body = JSON.parse(res.body);
 
-      expect(body).toHaveProperty('docs');
-      expect(Array.isArray(body.docs)).toBe(true);
-      let orderIsReversed = body.docs.every(doc, (i) => doc === docs[i]);
-      expect(orderIsReversed).toBe(true);
+        expect(body).toHaveProperty('docs');
+        expect(Array.isArray(body.docs)).toBe(true);
+        let orderIsReversed = body.docs.every(doc, (i) => doc === docs[i]);
+        expect(orderIsReversed).toBe(true);
+      });
     });
   });
 });
 
 describe('Delete question', () => {
-  describe('Non-existant user', async () => {
-    let cookies = getLoginCookieFor(userData.multiUsers[1]);
+  describe('Non-existant user', () => {
+    test('should return', async () => {
+      let cookies = getLoginCookieFor(userData.multiUsers[1]);
 
-    const res = await app.inject({
-      method: 'DELETE',
-      url: endpoints.generalUrl,
-      body: JSON.stringify({
-        three_words: THREE_WORDS,
-        number: 3
-      }),
-      cookies
-    });
+      const res = await app.inject({
+        method: 'DELETE',
+        url: endpoints.genericUrl,
+        body: JSON.stringify({
+          three_words: THREE_WORDS,
+          number: 3
+        }),
+        cookies
+      });
 
-    test('should return 401', () => {
-      expect(res.statusCode).toBe(401);
-      expect(res.body).toBeUndefined();
+      test('should return 401', () => {
+        expect(res.statusCode).toBe(401);
+        expect(res.body).toBeUndefined();
+      });
     });
   });
 
   describe('Non-existant quiz', () => {
     test('should return 404', async () => {
-      let cookies = getLoginCookieFor(userData.updatedFirstUser);
       const res = await app.inject({
         method: 'DELETE',
         url: endpoints.specificUrl.replace('{threeWords}', 'fake-quiz-word'),
         body: JSON.parse({
           number: 3
         }),
-        cookies
+        cookies: COOKIES
       });
 
       expect(res.statusCode).toBe(404);
@@ -1016,15 +1035,13 @@ describe('Delete question', () => {
 
   describe('Non-existant questions', () => {
     test('should return 404', async () => {
-      let cookies = getLoginCookieFor(userData.updatedFirstUser);
-
       const res = await app.inject({
         method: 'DELETE',
         url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
         body: JSON.stringify({
           number: 42
         }),
-        cookies
+        cookies: COOKIES
       });
 
       expect(res.statusCode).toBe(404);
@@ -1050,13 +1067,12 @@ describe('Delete question', () => {
   describe('Multiple quizzes', () => {
     test('should return 400', async () => {
       let { questionForMultipleQuiz } = data;
-      let cookies = getLoginCookieFor(userData.updatedFirstUser);
 
       const res = await app.inject({
         method: 'DELETE',
         url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
         body: JSON.stringify(questionForMultipleQuiz),
-        cookies
+        cookies: COOKIES
       });
 
       expect(res.statusCode).toBe(400);
@@ -1064,51 +1080,46 @@ describe('Delete question', () => {
     });
   });
   // Happy path
-  describe('Single question', async () => {
-    let cookies = getLoginCookieFor(userData.updatedFirstUser);
+  describe('Single question', () => {
+    test('should return 204', async () => {
+      const fetch = await app.inject({
+        method: 'GET',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
+      });
 
-    const fetch = await app.inject({
-      method: 'GET',
-      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
-    });
+      let fetchData = JSON.parse(fetch.body);
 
-    let fetchData = JSON.parse(fetch.body);
+      let qnToBeDeleted = fetchData.docs.find(
+        (doc) => doc.text === data.textQuestions[1].text
+      );
 
-    let qnToBeDeleted = fetchData.docs.find(
-      (doc) => doc.text === data.textQuestions[1].text
-    );
+      const res = await app.inject({
+        method: 'DELETE',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+        body: JSON.stringify(qnToBeDeleted),
+        cookies: COOKIES
+      });
 
-    const res = await app.inject({
-      method: 'DELETE',
-      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
-      body: JSON.stringify(qnToBeDeleted),
-      cookies
-    });
-
-    test('should return 204', () => {
       expect(res.statusCode).toBe(204);
       expect(res.body).toBeUndefined();
     });
   });
 
-  describe('Multiple questions', async () => {
-    let cookies = getLoginCookieFor(userData.updatedFirstUser);
+  describe('Multiple questions', () => {
+    test('should return 204', async () => {
+      const fetch = await app.inject({
+        method: 'GET',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
+      });
 
-    const fetch = await app.inject({
-      method: 'GET',
-      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS)
-    });
+      let { docs } = JSON.parse(fetch.body);
 
-    let { docs } = JSON.parse(fetch.body);
-
-    const res = await app.inject({
-      method: 'DELETE',
-      url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
-      body: JSON.stringify(docs.slice(3, 2)),
-      cookies
-    });
-
-    test('should return 204', () => {
+      const res = await app.inject({
+        method: 'DELETE',
+        url: endpoints.specificUrl.replace('{threeWords}', THREE_WORDS),
+        body: JSON.stringify(docs.slice(3, 2)),
+        cookies: COOKIES
+      });
       expect(res.statusCode).toBe(204);
       expect(res.body).toBeUndefined();
     });

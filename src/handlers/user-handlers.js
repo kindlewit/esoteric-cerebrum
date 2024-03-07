@@ -4,6 +4,7 @@ import _ from 'lodash';
 import { hash, compareSync } from 'bcryptjs';
 
 import User from '../services/user-services';
+import handleError from './error-handler';
 import { SALT_LENGTH } from '../config';
 
 export function cookieValidator(request, reply, next) {
@@ -39,7 +40,7 @@ async function signupUserHandler(request, reply) {
     return reply.code(201).send(doc);
   } catch (e) {
     request.log.error(e);
-    return reply.code(500).send();
+    handleError(e, reply);
   }
 }
 
@@ -101,8 +102,8 @@ async function updateUserHandler(request, reply) {
 
 async function deleteUserHandler(request, reply) {
   /**
-    * Cookie verification in pre-handler
-    */
+   * Cookie verification in pre-handler
+   */
   if (_.isNil(request.params.username)) {
     return reply.code(400).send();
   }

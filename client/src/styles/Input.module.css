@@ -1,0 +1,19 @@
+.input_field {
+  width: 19.25rem;
+  height: 1.5rem;
+  background-color: #EAEAEA;
+  border-radius: 8px;
+}
+
+.input {
+  height: 1.5rem;
+  border: none;
+  width: 14.5rem;
+  background-color: transparent;
+  padding: 0 0 0 0.5rem;
+}
+
+.logo {
+  width: 1.5rem;
+  height: 1.5rem;
+}
